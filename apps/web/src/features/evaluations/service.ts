@@ -93,3 +93,10 @@ export async function cancelEvaluation(id: string) {
     return true;
   });
 }
+
+export async function deleteEvaluation(id: string) {
+  const evaluation = await database.evaluation.findUnique({ where: { id } });
+  if (!evaluation) return false;
+  await database.evaluation.delete({ where: { id } });
+  return true;
+}

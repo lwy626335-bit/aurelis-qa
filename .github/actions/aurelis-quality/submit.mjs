@@ -1,0 +1,10 @@
+import { readFile, stat } from "node:fs/promises";
+const path = process.env.INPUT_HTML_PATH ?? "index.html";
+const info = await stat(path);
+if (info.size > 1_048_576) throw new Error("AURELIS input exceeds one MiB");
+const html = await readFile(path, "utf8");
+const base = new URL(process.env.INPUT_API_URL);
+const response = await fetch(new URL("/api/evaluations", base), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ brandProfileId: null, html, css: "", javascript: "", inputType: "HTML", language: process.env.INPUT_TARGET_LANGUAGE ?? "en", projectName: process.env.INPUT_PROJECT_NAME ?? "GitHub PR", targetLabel: `${process.env.GITHUB_REPOSITORY ?? "repository"}@${(process.env.GITHUB_SHA ?? "unknown").slice(0, 7)}` }) });
+const result = await response.json();
+if (!response.ok || !result.evaluationId) throw new Error(`AURELIS submission failed: ${response.status}`);
+console.log(`AURELIS evaluation queued: ${result.evaluationId}`);

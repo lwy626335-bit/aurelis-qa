@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { CancelEvaluationButton } from "@/components/evaluations/cancel-evaluation-button";
+import { DeleteEvaluationButton } from "@/components/evaluations/delete-evaluation-button";
 import { RewriteSuggestions } from "@/components/evaluations/rewrite-suggestions";
 import { getEvaluation } from "@/features/evaluations/service";
 import { getDictionary } from "@/i18n/server";
@@ -135,6 +136,8 @@ export default async function EvaluationStatusPage({ params }: { params: Promise
       {evaluation.recommendations.length > 0 && <RewriteSuggestions evaluationId={evaluation.id} locale={locale} />}
 
       {evaluation.failureCode && <div className="mt-4 border-l-2 border-[var(--warning)] p-4 text-xs text-[var(--text-secondary)]"><span className="font-mono text-[var(--warning)]">{evaluation.failureCode}</span>{evaluation.failureMessage && <p className="mt-2">{evaluation.failureMessage}</p>}</div>}
+
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-white/[0.07] pt-5"><a className="text-xs text-[var(--accent)] underline underline-offset-4" href={`/api/reports/${evaluation.id}/pdf`}>{locale === "ja" ? "PDFを出力" : "Export PDF"}</a><DeleteEvaluationButton evaluationId={evaluation.id} locale={locale} /></div>
 
       <div className="mt-4 border-l-2 border-[var(--warning)]/60 bg-[rgba(232,196,107,0.045)] p-4 text-sm text-[var(--text-secondary)]">
         {copy.overallUnavailable}

@@ -1,0 +1,25 @@
+name: AURELIS Quality Submit
+description: Submit checked-out HTML to an AURELIS QA evaluation queue
+inputs:
+  api-url:
+    description: Base URL of the self-hosted AURELIS instance
+    required: true
+  html-path:
+    description: HTML file to evaluate
+    default: index.html
+  project-name:
+    description: Research project label
+    default: GitHub PR
+  target-language:
+    description: Target content language (en or ja)
+    default: en
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        INPUT_API_URL: ${{ inputs.api-url }}
+        INPUT_HTML_PATH: ${{ inputs.html-path }}
+        INPUT_PROJECT_NAME: ${{ inputs.project-name }}
+        INPUT_TARGET_LANGUAGE: ${{ inputs.target-language }}
+      run: node "$GITHUB_ACTION_PATH/submit.mjs"

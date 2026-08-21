@@ -1,6 +1,6 @@
 # AURELIS QA
 
-AURELIS QA is an evidence-first platform for evaluating AI-generated websites. Phase 6 adds comparable history, immutable rubrics, and repeatability experiments to the hybrid evaluation workflow.
+AURELIS QA is an evidence-first platform for evaluating AI-generated websites. Phases 1–7 now provide the self-hosted research workflow from intake through technical/brand analysis, evidence, comparison, PDF, and GitHub Action submission.
 
 The interface labels every sample result as `Demo dataset`. No live website audit or AI evaluation is represented as complete.
 
@@ -48,7 +48,7 @@ Playwright covers desktop Chromium, a Pixel 7 viewport, route boundaries, reduce
 
 ## Current phase boundary
 
-Implemented through Phase 6:
+Implemented through Phase 7:
 
 - Dark-only design system and self-hosted Geist fonts
 - GSAP landing motion with reduced-motion behavior
@@ -70,9 +70,15 @@ Implemented through Phase 6:
 - Evidence, recommendations, and suggestion-only AI rewrite reporting
 - History, condition-aware comparison, and immutable rubric versions
 - Research experiments with deterministic mean, standard deviation, and variance
+- Server-side PDF reports, descriptive analytics, privacy disclosure, and cascade deletion
+- Public-project GitHub composite Action with non-blocking workflow defaults
 
 Not implemented:
 
-- Phase 7 GitHub and PDF integrations
+Deferred boundaries:
 
-See [architecture](docs/architecture.md), [design system](docs/design-system.md), [security](docs/security.md), and the [Phase 6 verification record](docs/phase-6-verification.md).
+- Private-repository GitHub App and status-check writeback
+- Live remote-resource performance until independently verifiable worker network isolation is deployed
+- Authentication and multi-tenant authorization for internet-facing deployment
+
+See [architecture](docs/architecture.md), [design system](docs/design-system.md), [security](docs/security.md), and the [Phase 7 verification record](docs/phase-7-verification.md).

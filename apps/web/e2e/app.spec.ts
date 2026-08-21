@@ -58,6 +58,15 @@ test.describe("AURELIS", () => {
     await expect(page.getByText("Overall score unavailable", { exact: false })).toBeVisible();
     await page.getByRole("button", { name: "Cancel queued evaluation" }).click();
     await expect(page.getByText("Cancelled", { exact: true })).toBeVisible();
+    const evaluationId = page.url().split("/").at(-1)!;
+    const pdf = await page.request.get(`/api/reports/${evaluationId}/pdf`);
+    expect(pdf.status()).toBe(200);
+    expect(pdf.headers()["content-type"]).toBe("application/pdf");
+    expect((await pdf.body()).subarray(0, 4).toString()).toBe("%PDF");
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.getByRole("button", { name: "Delete evaluation" }).click();
+    await expect(page).toHaveURL(/\/dashboard\/history$/);
+    expect((await page.request.get(`/api/evaluations/${evaluationId}`)).status()).toBe(404);
   });
 
   test("switches to Japanese and persists the locale", async ({ page }) => {
@@ -100,7 +109,7 @@ test.describe("AURELIS", () => {
 
   test("landing and dashboard have no serious or critical axe violations", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    for (const route of ["/", "/dashboard", "/dashboard/evaluations/new", "/dashboard/technical", "/dashboard/brands", "/dashboard/brands/new", "/dashboard/history", "/dashboard/compare", "/dashboard/rubrics", "/dashboard/research"]) {
+    for (const route of ["/", "/dashboard", "/dashboard/evaluations/new", "/dashboard/technical", "/dashboard/brands", "/dashboard/brands/new", "/dashboard/history", "/dashboard/compare", "/dashboard/rubrics", "/dashboard/research", "/dashboard/analytics", "/dashboard/privacy", "/dashboard/github"]) {
       await page.goto(route);
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])

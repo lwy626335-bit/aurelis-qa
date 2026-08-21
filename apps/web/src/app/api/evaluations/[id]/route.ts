@@ -1,4 +1,4 @@
-import { cancelEvaluation, getEvaluation } from "@/features/evaluations/service";
+import { cancelEvaluation, deleteEvaluation, getEvaluation } from "@/features/evaluations/service";
 
 type EvaluationRouteContext = { params: Promise<{ id: string }> };
 
@@ -13,9 +13,13 @@ export async function GET(_request: Request, context: EvaluationRouteContext) {
   }
 }
 
-export async function DELETE(_request: Request, context: EvaluationRouteContext) {
+export async function DELETE(request: Request, context: EvaluationRouteContext) {
   try {
     const { id } = await context.params;
+    if (new URL(request.url).searchParams.get("purge") === "true") {
+      const deleted = await deleteEvaluation(id);
+      return deleted ? new Response(null, { status: 204 }) : Response.json({ code: "NOT_FOUND" }, { status: 404 });
+    }
     const cancelled = await cancelEvaluation(id);
     if (!cancelled) return Response.json({ code: "NOT_CANCELLABLE" }, { status: 409 });
     return Response.json({ status: "CANCELLED" });
