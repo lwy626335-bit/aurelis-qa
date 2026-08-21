@@ -1,6 +1,6 @@
 # Security baseline
 
-Phase 1 establishes contracts without enabling live remote evaluation.
+The self-hosted research application separates untrusted input from the product origin and keeps secrets server-side.
 
 ## Implemented
 
@@ -11,8 +11,10 @@ Phase 1 establishes contracts without enabling live remote evaluation.
 - Evaluation failures have machine-readable code and user-safe message fields
 - Future routes never return fabricated success states
 
-## Required before Phase 3
+## Remote URL boundary
 
-String validation is not a complete SSRF defense. The worker must resolve DNS, validate every resolved address, pin or revalidate connections, re-run checks after every redirect, bound response size and duration, isolate browser execution, and deny access to cloud metadata and private networks at the network layer.
+String validation alone is not an SSRF defense. The worker resolves DNS, validates every resolved address, repeats validation after redirects, and bounds response size and duration. It does not execute embedded remote resources; full live-resource evaluation requires network-layer isolation and connection pinning.
 
-Live HTML must be treated as hostile input. Captured content must not execute inside the main application origin. Artifacts require content-type enforcement, retention limits, and authorization checks.
+Pasted JavaScript is not executed. HTML snapshots run with scripts removed and a deny-by-default Content Security Policy on a loopback-only ephemeral origin. URL documents are fetched with scheme, credential, DNS/IP, redirect, content-type, size, and timeout checks; embedded resources are not executed, so live performance is explicitly unavailable for URL snapshots.
+
+Before internet-facing deployment, add authentication, project authorization, rate limits, CSRF/origin enforcement, an authenticated GitHub submission token, and independently verified worker network isolation. The current mutation APIs are intended for a trusted local research environment only.

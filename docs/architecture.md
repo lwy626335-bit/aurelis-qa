@@ -1,4 +1,4 @@
-# Phase 1 architecture
+# Architecture through Phase 2
 
 ## Runtime shape
 
@@ -8,7 +8,7 @@ Browser
        -> packages/database (Prisma contract and demo fixture)
        -> packages/evaluation (pure scoring and validation contracts)
 
-Future evaluation request
+Evaluation request
   -> PostgreSQL job state
   -> apps/worker
        -> deterministic technical tools in Phase 3
@@ -34,12 +34,12 @@ The web application is the owner of final score calculation. Technical tools rem
 
 - `/` is public.
 - `/dashboard` is a public, read-only demonstration in Phase 1.
-- Future routes render an explicit phase status. They do not simulate a successful API response.
-- Authentication and workspace authorization arrive before mutable project data is enabled.
+- `/dashboard/evaluations` and its child routes create and inspect real local research records.
+- Authentication and multi-user authorization remain outside the self-hosted research MVP boundary.
 
 ## Worker boundary
 
-`apps/worker` currently exposes a typed capability manifest. Every heavy evaluator is marked `not-implemented` with its target phase. Phase 3 will add queue ownership, browser isolation, timeouts, redirect validation, DNS resolution checks, tool version capture, and bounded artifact retention.
+`apps/worker` currently exposes a typed capability manifest. Phase 2 persists queue jobs with lease, retry, stage, and cancellation fields. Phase 3 adds queue ownership, browser isolation, timeouts, redirect validation, DNS resolution checks, tool version capture, and bounded artifact retention.
 
 ## Scoring contract
 

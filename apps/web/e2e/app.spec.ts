@@ -11,7 +11,7 @@ async function revealLandingSections(page: Page) {
   }
 }
 
-test.describe("AURELIS Phase 1", () => {
+test.describe("AURELIS", () => {
   test("landing page presents the method and opens the demo", async ({ page }, testInfo) => {
     await page.goto("/");
 
@@ -27,7 +27,7 @@ test.describe("AURELIS Phase 1", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Evaluation overview" })).toBeVisible();
   });
 
-  test("dashboard exposes the demo dataset and future-phase boundaries", async ({ page }, testInfo) => {
+  test("dashboard exposes the demo dataset and Phase 2 evaluation workflow", async ({ page }, testInfo) => {
     await page.goto("/dashboard");
 
     await expect(page.getByText("Demo dataset", { exact: false }).first()).toBeVisible();
@@ -40,13 +40,76 @@ test.describe("AURELIS Phase 1", () => {
     await page.screenshot({ path: testInfo.outputPath("dashboard.png"), fullPage: true });
     await page.getByRole("link", { name: "New evaluation" }).click();
 
-    await expect(page.getByRole("heading", { name: "Not implemented" })).toBeVisible();
-    await expect(page.getByText("Phase 2", { exact: false }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "New evaluation" })).toBeVisible();
+    await expect(page.getByText("creates a real queue job", { exact: false })).toBeVisible();
+  });
+
+  test("creates, persists, and cancels a real queued evaluation", async ({ page }) => {
+    const suffix = `${Date.now()}-${test.info().project.name}`;
+    await page.goto("/dashboard/evaluations/new");
+    await page.getByLabel("Project name").fill(`E2E ${suffix}`);
+    await page.getByLabel("Target label").fill("Example target");
+    await page.getByLabel("Public URL").fill("https://example.com");
+    await page.getByRole("button", { name: "Create evaluation" }).click();
+
+    await expect(page).toHaveURL(/\/dashboard\/evaluations\/[a-z0-9]+$/);
+    await expect(page.getByText("Input and reproducibility metadata stored")).toBeVisible();
+    await expect(page.getByText("Technical evaluation queued or unavailable")).toBeVisible();
+    await expect(page.getByText("Overall score unavailable", { exact: false })).toBeVisible();
+    await page.getByRole("button", { name: "Cancel queued evaluation" }).click();
+    await expect(page.getByText("Cancelled", { exact: true })).toBeVisible();
+    const evaluationId = page.url().split("/").at(-1)!;
+    const pdf = await page.request.get(`/api/reports/${evaluationId}/pdf`);
+    expect(pdf.status()).toBe(200);
+    expect(pdf.headers()["content-type"]).toBe("application/pdf");
+    expect((await pdf.body()).subarray(0, 4).toString()).toBe("%PDF");
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.getByRole("button", { name: "Delete evaluation" }).click();
+    await expect(page).toHaveURL(/\/dashboard\/history$/);
+    expect((await page.request.get(`/api/evaluations/${evaluationId}`)).status()).toBe(404);
+  });
+
+  test("switches to Japanese and persists the locale", async ({ page }) => {
+    await page.goto("/");
+    if (test.info().project.name === "mobile-chromium") await page.locator("summary").click();
+    await page.getByRole("button", { name: "日本語" }).filter({ visible: true }).click();
+    await expect(page.locator("html")).toHaveAttribute("lang", "ja");
+    await expect(page.getByRole("heading", { level: 1, name: "AIが作ったWebを、基準で測る。" })).toBeVisible();
+    await page.goto("/dashboard/evaluations/new");
+    await expect(page.getByRole("heading", { name: "新しい評価" })).toBeVisible();
+  });
+
+  test("creates and persists an evidence-backed brand profile", async ({ page }) => {
+    const suffix = `${Date.now()}-${test.info().project.name}`;
+    await page.goto("/dashboard/brands/new");
+    await page.getByLabel("Project name").fill(`Brand E2E ${suffix}`);
+    await page.getByLabel("Brand name").fill(`Measured brand ${suffix}`);
+    await page.getByLabel("Target audience").fill("Research teams reviewing AI-generated web content");
+    await page.getByLabel("Personalities (comma separated)").fill("Professional, Measured");
+    await page.getByLabel("Description").fill("A measured and professional brand used to verify evidence-backed evaluation workflows.");
+    await page.getByLabel(/Example copy/).fill("First measured example.\n---\nSecond measured example.\n---\nThird measured example.");
+    await page.getByRole("button", { name: "Save brand" }).click();
+    await expect(page).toHaveURL(/\/dashboard\/brands$/);
+    await expect(page.getByText(`Measured brand ${suffix}`)).toBeVisible();
+  });
+
+  test("creates immutable rubric and research experiment records", async ({ page }) => {
+    const suffix = `${Date.now()}-${test.info().project.name}`.toLowerCase();
+    await page.goto("/dashboard/rubrics");
+    await page.getByLabel("Name", { exact: true }).fill(`Research rubric ${suffix}`);
+    await page.getByLabel("Version").fill(`research-${suffix}`);
+    await page.getByRole("button", { name: "Create version" }).click();
+    await expect(page.getByText("Saved a new immutable version.")).toBeVisible();
+    await page.goto("/dashboard/research");
+    await page.getByLabel("Experiment name").fill(`Experiment ${suffix}`);
+    await page.getByLabel("Runs").fill("1");
+    await page.getByRole("button", { name: "Create", exact: true }).click();
+    await expect(page.getByText(`Experiment ${suffix}`)).toBeVisible();
   });
 
   test("landing and dashboard have no serious or critical axe violations", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    for (const route of ["/", "/dashboard"]) {
+    for (const route of ["/", "/dashboard", "/dashboard/evaluations/new", "/dashboard/technical", "/dashboard/brands", "/dashboard/brands/new", "/dashboard/history", "/dashboard/compare", "/dashboard/rubrics", "/dashboard/research", "/dashboard/analytics", "/dashboard/privacy", "/dashboard/github"]) {
       await page.goto(route);
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])

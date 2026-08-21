@@ -1,6 +1,6 @@
 # AURELIS QA
 
-AURELIS QA is an evidence-first platform foundation for evaluating AI-generated websites. Phase 1 delivers the product architecture, full MVP data model, deterministic scoring contracts, a public landing page, and a public read-only demo dashboard.
+AURELIS QA is an evidence-first platform for evaluating AI-generated websites. Phases 1–7 now provide the self-hosted research workflow from intake through technical/brand analysis, evidence, comparison, PDF, and GitHub Action submission.
 
 The interface labels every sample result as `Demo dataset`. No live website audit or AI evaluation is represented as complete.
 
@@ -10,7 +10,7 @@ Requirements:
 
 - Node.js 24 or newer
 - pnpm 11.19.0
-- Docker Desktop for local PostgreSQL
+- Docker Desktop for local PostgreSQL and Nu HTML Checker
 
 ```bash
 pnpm install
@@ -23,12 +23,15 @@ pnpm dev
 ```
 
 Open `http://localhost:3000` for the landing page and `http://localhost:3000/dashboard` for the demo dashboard.
+The `pnpm dev` command starts both the web server and evaluation worker. Use `pnpm dev:web` when only the interface is needed.
+
+The GitHub repository stores source code; it is not a hosted application URL. GitHub Pages is not configured because AURELIS requires server routes, PostgreSQL, a long-running worker, and browser-based audit tooling. Use the local URL above or deploy to an authenticated full-stack environment before exposing it to the internet.
 
 ## Workspace
 
 ```text
 apps/web            Next.js 16 product and marketing interface
-apps/worker         Phase 1 worker capability skeleton
+apps/worker         Evaluation worker
 packages/database   Prisma 7 schema, migration, seed, and demo fixture
 packages/evaluation Deterministic scoring, structured AI output contract, URL preflight
 docs                Architecture, design system, security, and verification notes
@@ -46,9 +49,9 @@ pnpm test:e2e
 
 Playwright covers desktop Chromium, a Pixel 7 viewport, route boundaries, reduced motion, chart rendering, and axe WCAG 2 A/AA checks.
 
-## Phase boundary
+## Current phase boundary
 
-Implemented in Phase 1:
+Implemented through Phase 7:
 
 - Dark-only design system and self-hosted Geist fonts
 - GSAP landing motion with reduced-motion behavior
@@ -57,15 +60,28 @@ Implemented in Phase 1:
 - Deterministic weighted scoring and reliability functions
 - Zod contract for evidence-backed AI evaluator output
 - URL preflight that rejects unsafe schemes, credentials, local hosts, and private IP literals
-- Worker skeleton with explicit future capability states
+- English/Japanese switch with `Accept-Language` initialization and cookie persistence
+- URL or HTML/CSS/JavaScript submission with a one MiB limit
+- PostgreSQL evaluation, version metadata, and job records
+- Real queued/cancelled states without fabricated progress or scores
+- Local PostgreSQL and Nu HTML Checker services
+- Atomic job leasing and technical result persistence
+- Lighthouse lab, axe, Nu HTML Checker, and deterministic DOM/SEO analysis
+- Brand profile, examples, and reference corpus management
+- OpenAI Responses API evaluator/reviewer adapter with deterministic evidence anchoring
+- Application-owned overall and reliability calculation
+- Evidence, recommendations, and suggestion-only AI rewrite reporting
+- History, condition-aware comparison, and immutable rubric versions
+- Research experiments with deterministic mean, standard deviation, and variance
+- Server-side PDF reports, descriptive analytics, privacy disclosure, and cascade deletion
+- Public-project GitHub composite Action with non-blocking workflow defaults
 
 Not implemented:
 
-- Phase 2 authentication, project CRUD, brand profile CRUD, and evaluation submission
-- Phase 3 browser capture, Lighthouse, validation, accessibility, and job processing
-- Phase 4 AI brand evaluation
-- Phase 5 recommendations workflow
-- Phase 6 comparison, research mode, and rubric management
-- Phase 7 GitHub and PDF integrations
+Deferred boundaries:
 
-See [architecture](docs/architecture.md), [design system](docs/design-system.md), [security](docs/security.md), and [verification](docs/phase-1-verification.md).
+- Private-repository GitHub App and status-check writeback
+- Live remote-resource performance until independently verifiable worker network isolation is deployed
+- Authentication and multi-tenant authorization for internet-facing deployment
+
+See [architecture](docs/architecture.md), [design system](docs/design-system.md), [security](docs/security.md), and the [Phase 7 verification record](docs/phase-7-verification.md).
