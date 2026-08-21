@@ -7,13 +7,15 @@ permissions:
 jobs:
   submit:
     continue-on-error: true
+    env:
+      AURELIS_API_URL: ${{ secrets.AURELIS_API_URL }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Submit static sample
-        if: ${{ secrets.AURELIS_API_URL != '' }}
+        if: ${{ env.AURELIS_API_URL != '' }}
         uses: ./.github/actions/aurelis-quality
         with:
-          api-url: ${{ secrets.AURELIS_API_URL }}
+          api-url: ${{ env.AURELIS_API_URL }}
           html-path: .github/fixtures/aurelis-sample.html
           project-name: ${{ github.repository }} PR ${{ github.event.pull_request.number || 'manual' }}
