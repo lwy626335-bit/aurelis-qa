@@ -10,8 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/aurelis-quality
+      - name: Submit static sample
+        if: ${{ secrets.AURELIS_API_URL != '' }}
+        uses: ./.github/actions/aurelis-quality
         with:
           api-url: ${{ secrets.AURELIS_API_URL }}
-          html-path: index.html
+          html-path: .github/fixtures/aurelis-sample.html
           project-name: ${{ github.repository }} PR ${{ github.event.pull_request.number || 'manual' }}
