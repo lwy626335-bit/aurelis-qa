@@ -7,7 +7,8 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "dev": "pnpm --filter @aurelis/web dev",
+    "dev": "pnpm --parallel --filter @aurelis/web --filter @aurelis/worker dev",
+    "dev:web": "pnpm --filter @aurelis/web dev",
     "dev:worker": "pnpm --filter @aurelis/worker dev",
     "build": "pnpm -r --if-present build",
     "lint": "pnpm -r --if-present lint",

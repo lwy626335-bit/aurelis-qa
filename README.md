@@ -10,7 +10,7 @@ Requirements:
 
 - Node.js 24 or newer
 - pnpm 11.19.0
-- Docker Desktop for local PostgreSQL
+- Docker Desktop for local PostgreSQL and Nu HTML Checker
 
 ```bash
 pnpm install
@@ -23,6 +23,9 @@ pnpm dev
 ```
 
 Open `http://localhost:3000` for the landing page and `http://localhost:3000/dashboard` for the demo dashboard.
+The `pnpm dev` command starts both the web server and evaluation worker. Use `pnpm dev:web` when only the interface is needed.
+
+The GitHub repository stores source code; it is not a hosted application URL. GitHub Pages is not configured because AURELIS requires server routes, PostgreSQL, a long-running worker, and browser-based audit tooling. Use the local URL above or deploy to an authenticated full-stack environment before exposing it to the internet.
 
 ## Workspace
 
