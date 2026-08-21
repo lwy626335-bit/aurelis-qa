@@ -11,6 +11,24 @@ const dimensions = [
   ["audience-fit", 15], ["message-consistency", 15], ["writing-style", 10], ["cta-consistency", 5],
 ] as const;
 
+type StageResponse<T> = {
+  error: { message: string } | null;
+  incomplete_details: { reason?: string } | null;
+  output: Array<{ type: string; content?: Array<{ type: string; refusal?: string }> }>;
+  output_parsed: T | null;
+  status?: string;
+};
+
+export function parseStageOutput<T>(response: StageResponse<T>, stage: "evaluator" | "reviewer") {
+  const prefix = `AI_${stage.toUpperCase()}`;
+  const refusal = response.output.flatMap((item) => item.content ?? []).find((item) => item.type === "refusal")?.refusal;
+  if (refusal) throw new Error(`${prefix}_REFUSED:${refusal.replace(/\s+/g, " ").slice(0, 300)}`);
+  if (response.status === "incomplete") throw new Error(`${prefix}_INCOMPLETE:${response.incomplete_details?.reason ?? "unknown"}`);
+  if (response.status && response.status !== "completed") throw new Error(`${prefix}_${response.status.toUpperCase()}:${response.error?.message ?? "unknown"}`);
+  if (!response.output_parsed) throw new Error(`${prefix}_UNPARSED:status=${response.status ?? "unknown"}`);
+  return response.output_parsed;
+}
+
 function targetText(html: string) {
   return html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ").replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }
@@ -36,10 +54,10 @@ async function callStage(client: OpenAI, input: string, stage: "evaluator" | "re
       { role: "system", content: `You are the independent ${stage} in an evidence-based brand voice study. Use only supplied sources and rubric. No evidence means insufficient_evidence. Do not calculate an overall score. Return every rubric dimension exactly once. Preserve evidence excerpts verbatim. Respond in the target content language.` },
       { role: "user", content: input },
     ],
+    store: false,
     text: { format: zodTextFormat(brandEvaluationStructuredSchema, `brand_${stage}`) },
   });
-  if (!response.output_parsed) throw new Error(`AI_${stage.toUpperCase()}_UNPARSED`);
-  return response.output_parsed;
+  return parseStageOutput(response, stage);
 }
 
 export async function runBrandEvaluation(evaluationId: string) {
