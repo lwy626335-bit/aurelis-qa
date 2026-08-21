@@ -17,5 +17,15 @@ services:
     volumes:
       - aurelis_postgres_data:/var/lib/postgresql/data
 
+  validator:
+    image: ghcr.io/validator/validator:latest
+    container_name: aurelis-validator
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8888:8888"
+    environment:
+      CONNECTION_TIMEOUT_SECONDS: "15"
+      SOCKET_TIMEOUT_SECONDS: "15"
+
 volumes:
   aurelis_postgres_data:

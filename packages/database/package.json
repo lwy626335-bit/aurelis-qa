@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "exports": {
+    "./client": "./src/client.ts",
     "./demo": "./src/demo.ts"
   },
   "dependencies": {

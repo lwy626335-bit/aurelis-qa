@@ -1,3 +1,3 @@
-export * from "./brand-schema.js";
-export * from "./scoring.js";
-export * from "./url-security.js";
+export * from "./brand-schema";
+export * from "./scoring";
+export * from "./url-security";

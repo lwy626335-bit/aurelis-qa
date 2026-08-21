@@ -11,7 +11,7 @@ async function revealLandingSections(page: Page) {
   }
 }
 
-test.describe("AURELIS Phase 1", () => {
+test.describe("AURELIS", () => {
   test("landing page presents the method and opens the demo", async ({ page }, testInfo) => {
     await page.goto("/");
 
@@ -27,7 +27,7 @@ test.describe("AURELIS Phase 1", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Evaluation overview" })).toBeVisible();
   });
 
-  test("dashboard exposes the demo dataset and future-phase boundaries", async ({ page }, testInfo) => {
+  test("dashboard exposes the demo dataset and Phase 2 evaluation workflow", async ({ page }, testInfo) => {
     await page.goto("/dashboard");
 
     await expect(page.getByText("Demo dataset", { exact: false }).first()).toBeVisible();
@@ -40,13 +40,39 @@ test.describe("AURELIS Phase 1", () => {
     await page.screenshot({ path: testInfo.outputPath("dashboard.png"), fullPage: true });
     await page.getByRole("link", { name: "New evaluation" }).click();
 
-    await expect(page.getByRole("heading", { name: "Not implemented" })).toBeVisible();
-    await expect(page.getByText("Phase 2", { exact: false }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "New evaluation" })).toBeVisible();
+    await expect(page.getByText("creates a real queue job", { exact: false })).toBeVisible();
+  });
+
+  test("creates, persists, and cancels a real queued evaluation", async ({ page }) => {
+    const suffix = `${Date.now()}-${test.info().project.name}`;
+    await page.goto("/dashboard/evaluations/new");
+    await page.getByLabel("Project name").fill(`E2E ${suffix}`);
+    await page.getByLabel("Target label").fill("Example target");
+    await page.getByLabel("Public URL").fill("https://example.com");
+    await page.getByRole("button", { name: "Create evaluation" }).click();
+
+    await expect(page).toHaveURL(/\/dashboard\/evaluations\/[a-z0-9]+$/);
+    await expect(page.getByText("Input and reproducibility metadata stored")).toBeVisible();
+    await expect(page.getByText("Technical engine unavailable until Phase 3")).toBeVisible();
+    await expect(page.getByText("Overall score unavailable", { exact: false })).toBeVisible();
+    await page.getByRole("button", { name: "Cancel queued evaluation" }).click();
+    await expect(page.getByText("Cancelled", { exact: true })).toBeVisible();
+  });
+
+  test("switches to Japanese and persists the locale", async ({ page }) => {
+    await page.goto("/");
+    if (test.info().project.name === "mobile-chromium") await page.locator("summary").click();
+    await page.getByRole("button", { name: "日本語" }).filter({ visible: true }).click();
+    await expect(page.locator("html")).toHaveAttribute("lang", "ja");
+    await expect(page.getByRole("heading", { level: 1, name: "AIが作ったWebを、基準で測る。" })).toBeVisible();
+    await page.goto("/dashboard/evaluations/new");
+    await expect(page.getByRole("heading", { name: "新しい評価" })).toBeVisible();
   });
 
   test("landing and dashboard have no serious or critical axe violations", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    for (const route of ["/", "/dashboard"]) {
+    for (const route of ["/", "/dashboard", "/dashboard/evaluations/new"]) {
       await page.goto(route);
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])

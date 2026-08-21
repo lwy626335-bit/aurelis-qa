@@ -1,4 +1,4 @@
-import { demoReport, DEMO_DATASET_LABEL } from "@aurelis/database/demo";
+import { demoReport } from "@aurelis/database/demo";
 import {
   ArrowRight,
   ChartLineUp,
@@ -16,20 +16,15 @@ import { QualitySnapshot } from "@/components/data/quality-snapshot";
 import { ButtonLink } from "@/components/ui/button-link";
 import { LandingMotion } from "@/components/landing/landing-motion";
 import { SiteHeader } from "@/components/landing/site-header";
+import type { Dictionary, Locale } from "@/i18n/config";
 
-const principles = ["Measured", "Explainable", "Evidence-based", "Repeatable", "Comparable"];
+const pipelineIcons = [Code, Fingerprint, Sparkle, ChartLineUp];
 
-const pipeline = [
-  { label: "Capture", detail: "URL or HTML input", icon: Code },
-  { label: "Measure", detail: "Deterministic technical audits", icon: Fingerprint },
-  { label: "Interpret", detail: "Brand voice evaluation", icon: Sparkle },
-  { label: "Calculate", detail: "Application-owned scoring", icon: ChartLineUp },
-];
-
-export function LandingPage() {
+export function LandingPage({ dictionary, locale }: { dictionary: Dictionary; locale: Locale }) {
+  const copy = dictionary.landing;
   return (
     <LandingMotion>
-      <SiteHeader />
+      <SiteHeader dictionary={dictionary} locale={locale} />
       <main id="main-content">
         <section data-hero className="relative isolate overflow-hidden border-b border-white/[0.07]">
           <div data-ambient className="aurelis-grid pointer-events-none absolute inset-0 -z-10 opacity-75" aria-hidden="true" />
@@ -40,20 +35,20 @@ export function LandingPage() {
           <div className="aurelis-shell grid min-h-[calc(100dvh-4rem)] items-center gap-12 py-12 md:grid-cols-[minmax(0,0.88fr)_minmax(420px,1.12fr)] md:py-16">
             <div data-hero-copy className="max-w-2xl">
               <p data-motion className="font-mono text-[11px] font-medium tracking-[0.18em] text-[var(--accent)] uppercase">
-                AI Web Quality Intelligence
+                {copy.eyebrow}
               </p>
               <h1 data-motion className="mt-5 max-w-[11ch] text-balance text-5xl font-medium leading-[0.98] tracking-[-0.055em] text-[var(--text)] sm:text-6xl lg:text-[4.7rem]">
-                Measure what AI creates.
+                {copy.heroTitle}
               </h1>
               <p data-motion className="mt-6 max-w-[36rem] text-pretty text-base leading-7 text-[var(--text-secondary)] md:text-lg">
-                Evaluate technical quality and brand alignment with reproducible scores, cited evidence, and deterministic calculation.
+                {copy.heroDescription}
               </p>
               <div data-motion className="mt-8 flex flex-wrap gap-3">
                 <ButtonLink href="/dashboard">
-                  Open demo <ArrowRight aria-hidden="true" className="ml-2 size-4" />
+                  {dictionary.common.openDemo} <ArrowRight aria-hidden="true" className="ml-2 size-4" />
                 </ButtonLink>
                 <ButtonLink href="#methodology" tone="secondary">
-                  View methodology
+                  {copy.viewMethodology}
                 </ButtonLink>
               </div>
               <div data-hero-rule className="mt-10 h-px w-full bg-gradient-to-r from-[var(--accent)]/50 via-white/10 to-transparent" />
@@ -61,7 +56,7 @@ export function LandingPage() {
 
             <div data-hero-visual data-motion className="relative mx-auto w-full max-w-[720px] md:translate-y-4">
               <div className="pointer-events-none absolute -inset-10 -z-10 bg-[radial-gradient(circle,rgba(140,140,255,0.055),transparent_68%)]" aria-hidden="true" />
-              <QualitySnapshot />
+              <QualitySnapshot dictionary={dictionary} />
             </div>
           </div>
         </section>
@@ -70,14 +65,14 @@ export function LandingPage() {
           <div className="aurelis-shell">
             <div data-reveal className="max-w-4xl">
               <h2 className="text-balance text-4xl font-medium tracking-[-0.045em] text-[var(--text)] md:text-6xl">
-                Quality is not a feeling.
+                {copy.qualityTitle}
               </h2>
               <p className="mt-5 max-w-[52ch] text-lg leading-8 text-[var(--text-secondary)]">
-                AURELIS separates measurement from interpretation, then preserves the evidence behind every score.
+                {copy.qualityBody}
               </p>
             </div>
             <div data-reveal className="mt-14 grid gap-px overflow-hidden rounded-[var(--radius-card)] border border-white/[0.08] bg-white/[0.08] sm:grid-cols-2 lg:grid-cols-5">
-              {principles.map((principle, index) => (
+              {copy.principles.map((principle, index) => (
                 <div
                   key={principle}
                   className={`${index === 0 || index === 3 ? "bg-[rgba(214,185,120,0.055)]" : "bg-[var(--surface)]"} min-h-36 p-5`}
@@ -94,22 +89,22 @@ export function LandingPage() {
           <div className="aurelis-shell">
             <div data-reveal className="max-w-3xl">
               <h2 className="text-balance text-4xl font-medium tracking-[-0.045em] text-[var(--text)] md:text-6xl">
-                A method you can inspect.
+                {copy.methodTitle}
               </h2>
               <p className="mt-5 max-w-[58ch] text-base leading-7 text-[var(--text-secondary)]">
-                Technical tools produce measurements. AI organizes supported observations. The application calculates the final result.
+                {copy.methodBody}
               </p>
             </div>
 
             <ol data-reveal className="mt-14 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              {pipeline.map((item) => {
-                const Icon = item.icon;
+              {copy.pipeline.map(([label, detail], index) => {
+                const Icon = pipelineIcons[index];
                 return (
-                  <li key={item.label} className="group relative min-h-52 overflow-hidden rounded-[var(--radius-card)] border border-white/[0.08] bg-white/[0.025] p-5">
+                  <li key={label} className="group relative min-h-52 overflow-hidden rounded-[var(--radius-card)] border border-white/[0.08] bg-white/[0.025] p-5">
                     <Icon aria-hidden="true" className="size-6 text-[var(--accent)]" weight="light" />
                     <div className="absolute bottom-5 left-5 right-5">
-                      <h3 className="text-lg font-medium text-[var(--text)]">{item.label}</h3>
-                      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{item.detail}</p>
+                      <h3 className="text-lg font-medium text-[var(--text)]">{label}</h3>
+                      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{detail}</p>
                     </div>
                     <div className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-[var(--accent)]/70 transition-transform duration-500 ease-[var(--ease-premium)] group-hover:scale-x-100" />
                   </li>
@@ -124,9 +119,9 @@ export function LandingPage() {
             <div data-reveal className="rounded-[var(--radius-card)] border border-white/[0.08] bg-[var(--background)] p-6 md:p-9">
               <p className="font-mono text-[10px] text-[var(--text-tertiary)]">TECHNICAL QUALITY</p>
               <p className="mono-number mt-8 text-7xl font-medium text-[var(--text)] md:text-8xl">91</p>
-              <h2 className="mt-8 text-2xl font-medium tracking-[-0.03em]">Measured by tools first.</h2>
+              <h2 className="mt-8 text-2xl font-medium tracking-[-0.03em]">{copy.technicalTitle}</h2>
               <p className="mt-3 max-w-[48ch] text-sm leading-7 text-[var(--text-secondary)]">
-                Lighthouse, accessibility checks, HTML validation, and SEO analysis remain authoritative. AI cannot overwrite them.
+                {copy.technicalBody}
               </p>
             </div>
 
@@ -136,9 +131,9 @@ export function LandingPage() {
                 <p className="mono-number mt-8 text-7xl font-medium text-[var(--text)] md:text-8xl">82</p>
               </div>
               <div>
-                <h2 className="text-2xl font-medium tracking-[-0.03em]">Interpreted against evidence.</h2>
+                <h2 className="text-2xl font-medium tracking-[-0.03em]">{copy.brandTitle}</h2>
                 <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">
-                  Profile, approved copy, and reference sources define the brand. Generic writing quality does not.
+                  {copy.brandBody}
                 </p>
               </div>
             </div>
@@ -149,9 +144,9 @@ export function LandingPage() {
           <div className="aurelis-shell grid gap-14 lg:grid-cols-[0.72fr_1.28fr] lg:items-start">
             <div data-reveal className="lg:sticky lg:top-28">
               <ShieldCheck aria-hidden="true" className="size-8 text-[var(--accent)]" weight="light" />
-              <h2 className="mt-7 text-balance text-4xl font-medium tracking-[-0.045em] md:text-5xl">The score is only the start.</h2>
+              <h2 className="mt-7 text-balance text-4xl font-medium tracking-[-0.045em] md:text-5xl">{copy.evidenceTitle}</h2>
               <p className="mt-5 max-w-[40ch] text-base leading-7 text-[var(--text-secondary)]">
-                Every judgment carries its observation, reason, recommendation, source, and evidence strength.
+                {copy.evidenceBody}
               </p>
             </div>
 
@@ -159,35 +154,35 @@ export function LandingPage() {
               <div className="border-b border-white/[0.07] p-5 md:p-7">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-medium">Tone consistency</p>
-                    <p className="mt-1 text-xs text-[var(--text-tertiary)]">Brand voice evaluation</p>
+                    <p className="text-sm font-medium">{copy.toneConsistency}</p>
+                    <p className="mt-1 text-xs text-[var(--text-tertiary)]">{copy.brandEvaluation}</p>
                   </div>
                   <p className="mono-number text-3xl">18<span className="text-sm text-[var(--text-tertiary)]"> / 20</span></p>
                 </div>
               </div>
               <dl className="grid md:grid-cols-2">
                 <div className="border-b border-white/[0.07] p-5 md:border-r md:p-7">
-                  <dt className="font-mono text-[10px] text-[var(--accent)]">EVIDENCE</dt>
+                  <dt className="font-mono text-[10px] text-[var(--accent)]">{copy.evidence}</dt>
                   <dd className="mt-4 text-sm leading-7 text-[var(--text-secondary)]">
-                    Copy favors precise product outcomes and avoids unsupported superlatives across the reviewed sample.
+                    {copy.evidenceText}
                   </dd>
                 </div>
                 <div className="border-b border-white/[0.07] p-5 md:p-7">
-                  <dt className="font-mono text-[10px] text-[var(--accent)]">REASON</dt>
+                  <dt className="font-mono text-[10px] text-[var(--accent)]">{copy.reason}</dt>
                   <dd className="mt-4 text-sm leading-7 text-[var(--text-secondary)]">
-                    This matches the measured, professional, and reserved traits in the registered profile.
+                    {copy.reasonText}
                   </dd>
                 </div>
                 <div className="p-5 md:border-r md:p-7">
-                  <dt className="font-mono text-[10px] text-[var(--accent)]">RECOMMENDATION</dt>
+                  <dt className="font-mono text-[10px] text-[var(--accent)]">{copy.recommendation}</dt>
                   <dd className="mt-4 text-sm leading-7 text-[var(--text-secondary)]">
-                    Replace two absolute claims with qualified language supported by the reference corpus.
+                    {copy.recommendationText}
                   </dd>
                 </div>
                 <div className="bg-white/[0.018] p-5 md:p-7">
-                  <dt className="font-mono text-[10px] text-[var(--accent)]">EVIDENCE STRENGTH</dt>
+                  <dt className="font-mono text-[10px] text-[var(--accent)]">{copy.evidenceStrength}</dt>
                   <dd className="mt-4 flex items-center gap-2 text-sm text-[var(--text)]">
-                    <CheckCircle aria-hidden="true" className="size-4 text-[var(--success)]" weight="fill" /> Strong
+                    <CheckCircle aria-hidden="true" className="size-4 text-[var(--success)]" weight="fill" /> {copy.strong}
                   </dd>
                 </div>
               </dl>
@@ -200,9 +195,9 @@ export function LandingPage() {
             <div data-reveal className="grid gap-10 lg:grid-cols-[0.55fr_1.45fr] lg:items-end">
               <div>
                 <Quotes aria-hidden="true" className="size-7 text-[var(--accent)]" weight="fill" />
-                <h2 className="mt-6 text-3xl font-medium tracking-[-0.04em] md:text-4xl">Research-ready by design.</h2>
+                <h2 className="mt-6 text-3xl font-medium tracking-[-0.04em] md:text-4xl">{copy.researchTitle}</h2>
                 <p className="mt-4 text-sm leading-7 text-[var(--text-secondary)]">
-                  Model, prompt, rubric, corpus, input hash, and tool versions stay attached to every evaluation.
+                  {copy.researchBody}
                 </p>
               </div>
               <div className="grid gap-px overflow-hidden rounded-[var(--radius-card)] border border-white/[0.08] bg-white/[0.08] sm:grid-cols-2 lg:grid-cols-4">
@@ -227,14 +222,14 @@ export function LandingPage() {
             <div data-reveal className="mx-auto max-w-5xl">
               <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
                 <div>
-                  <h2 className="text-3xl font-medium tracking-[-0.04em] md:text-5xl">See the complete system.</h2>
-                  <p className="mt-3 text-sm text-[var(--text-secondary)]">{DEMO_DATASET_LABEL}. No live audit was executed.</p>
+                  <h2 className="text-3xl font-medium tracking-[-0.04em] md:text-5xl">{copy.seeSystem}</h2>
+                  <p className="mt-3 text-sm text-[var(--text-secondary)]">{dictionary.common.demoDataset}. {copy.noLiveAudit}</p>
                 </div>
                 <ButtonLink href="/dashboard" tone="secondary">
-                  Open dashboard <ArrowRight aria-hidden="true" className="ml-2 size-4" />
+                  {copy.openDashboard} <ArrowRight aria-hidden="true" className="ml-2 size-4" />
                 </ButtonLink>
               </div>
-              <QualitySnapshot compact />
+              <QualitySnapshot compact dictionary={dictionary} />
             </div>
           </div>
         </section>
@@ -242,13 +237,13 @@ export function LandingPage() {
         <section className="border-t border-white/[0.07] py-24 md:py-36">
           <div data-reveal className="aurelis-shell text-center">
             <h2 className="mx-auto max-w-[13ch] text-balance text-5xl font-medium leading-[1.02] tracking-[-0.055em] md:text-7xl">
-              Ready to measure what AI creates?
+              {copy.ctaTitle}
             </h2>
             <p className="mx-auto mt-6 max-w-[40ch] text-base leading-7 text-[var(--text-secondary)]">
-              Turn subjective review into measurable web quality.
+              {copy.ctaBody}
             </p>
             <ButtonLink href="/dashboard" className="mt-8">
-              Open demo <ArrowRight aria-hidden="true" className="ml-2 size-4" />
+              {dictionary.common.openDemo} <ArrowRight aria-hidden="true" className="ml-2 size-4" />
             </ButtonLink>
           </div>
         </section>
@@ -258,13 +253,13 @@ export function LandingPage() {
         <div className="aurelis-shell flex flex-col gap-7 md:flex-row md:items-end md:justify-between">
           <div>
             <AurelisMark />
-            <p className="mt-3 text-xs text-[var(--text-tertiary)]">AI Web Quality Intelligence</p>
+            <p className="mt-3 text-xs text-[var(--text-tertiary)]">{copy.footerTagline}</p>
           </div>
           <div className="flex flex-wrap gap-x-6 gap-y-3 text-xs text-[var(--text-tertiary)]">
-            <Link href="#methodology" className="hover:text-[var(--text)]">Methodology</Link>
-            <Link href="/dashboard/research" className="hover:text-[var(--text)]">Research</Link>
-            <Link href="/dashboard/documentation" className="hover:text-[var(--text)]">Documentation</Link>
-            <Link href="/dashboard/privacy" className="hover:text-[var(--text)]">Privacy</Link>
+            <Link href="#methodology" className="hover:text-[var(--text)]">{copy.nav[0][0]}</Link>
+            <Link href="/dashboard/research" className="hover:text-[var(--text)]">{copy.nav[2][0]}</Link>
+            <Link href="/dashboard/documentation" className="hover:text-[var(--text)]">{copy.documentation}</Link>
+            <Link href="/dashboard/privacy" className="hover:text-[var(--text)]">{copy.privacy}</Link>
             <span>© 2026</span>
           </div>
         </div>

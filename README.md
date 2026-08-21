@@ -1,6 +1,6 @@
 # AURELIS QA
 
-AURELIS QA is an evidence-first platform foundation for evaluating AI-generated websites. Phase 1 delivers the product architecture, full MVP data model, deterministic scoring contracts, a public landing page, and a public read-only demo dashboard.
+AURELIS QA is an evidence-first platform for evaluating AI-generated websites. Phase 2 adds bilingual product surfaces and a real PostgreSQL-backed evaluation submission queue to the Phase 1 architecture and demo dashboard.
 
 The interface labels every sample result as `Demo dataset`. No live website audit or AI evaluation is represented as complete.
 
@@ -28,7 +28,7 @@ Open `http://localhost:3000` for the landing page and `http://localhost:3000/das
 
 ```text
 apps/web            Next.js 16 product and marketing interface
-apps/worker         Phase 1 worker capability skeleton
+apps/worker         Evaluation worker
 packages/database   Prisma 7 schema, migration, seed, and demo fixture
 packages/evaluation Deterministic scoring, structured AI output contract, URL preflight
 docs                Architecture, design system, security, and verification notes
@@ -46,9 +46,9 @@ pnpm test:e2e
 
 Playwright covers desktop Chromium, a Pixel 7 viewport, route boundaries, reduced motion, chart rendering, and axe WCAG 2 A/AA checks.
 
-## Phase boundary
+## Current phase boundary
 
-Implemented in Phase 1:
+Implemented through Phase 2:
 
 - Dark-only design system and self-hosted Geist fonts
 - GSAP landing motion with reduced-motion behavior
@@ -57,15 +57,18 @@ Implemented in Phase 1:
 - Deterministic weighted scoring and reliability functions
 - Zod contract for evidence-backed AI evaluator output
 - URL preflight that rejects unsafe schemes, credentials, local hosts, and private IP literals
-- Worker skeleton with explicit future capability states
+- English/Japanese switch with `Accept-Language` initialization and cookie persistence
+- URL or HTML/CSS/JavaScript submission with a one MiB limit
+- PostgreSQL evaluation, version metadata, and job records
+- Real queued/cancelled states without fabricated progress or scores
+- Local PostgreSQL and Nu HTML Checker services
 
 Not implemented:
 
-- Phase 2 authentication, project CRUD, brand profile CRUD, and evaluation submission
 - Phase 3 browser capture, Lighthouse, validation, accessibility, and job processing
 - Phase 4 AI brand evaluation
 - Phase 5 recommendations workflow
 - Phase 6 comparison, research mode, and rubric management
 - Phase 7 GitHub and PDF integrations
 
-See [architecture](docs/architecture.md), [design system](docs/design-system.md), [security](docs/security.md), and [verification](docs/phase-1-verification.md).
+See [architecture](docs/architecture.md), [design system](docs/design-system.md), [security](docs/security.md), and the [Phase 2 verification record](docs/phase-2-verification.md).

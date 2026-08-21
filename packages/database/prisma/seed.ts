@@ -5,11 +5,9 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { demoReport } from "../src/demo.js";
 import { PrismaClient } from "../generated/prisma/client.js";
 
-const connectionString = process.env.DATABASE_URL;
-
-if (!connectionString) {
-  throw new Error("DATABASE_URL is required to seed the demo dataset.");
-}
+const connectionString =
+  process.env.DATABASE_URL ??
+  "postgresql://aurelis:aurelis_dev@localhost:5432/aurelis?schema=public";
 
 const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });

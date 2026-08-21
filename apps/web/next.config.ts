@@ -13,7 +13,7 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
-  transpilePackages: ["@aurelis/database"],
+  transpilePackages: ["@aurelis/database", "@aurelis/evaluation"],
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },
