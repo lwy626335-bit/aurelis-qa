@@ -1,0 +1,329 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum EvaluationStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  PARTIAL
+  FAILED
+}
+
+enum EvaluationInputType {
+  URL
+  HTML
+  GITHUB
+}
+
+enum EvidenceStrength {
+  STRONG
+  MODERATE
+  WEAK
+  INSUFFICIENT
+}
+
+enum IssueSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum ReferenceSourceType {
+  OFFICIAL_WEBSITE
+  BRAND_GUIDELINES
+  PRESS_RELEASE
+  PRODUCT_COPY
+  USER_PROVIDED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  projects      Project[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refreshToken      String?
+  accessToken       String?
+  expiresAt         Int?
+  tokenType         String?
+  scope             String?
+  idToken           String?
+  sessionState      String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Project {
+  id          String       @id @default(cuid())
+  ownerId     String?
+  name        String
+  description String?
+  owner       User?        @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  websites    Website[]
+  brands      BrandProfile[]
+  evaluations Evaluation[]
+  experiments Experiment[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Website {
+  id          String       @id @default(cuid())
+  projectId   String
+  label       String
+  canonicalUrl String?
+  inputType   EvaluationInputType
+  htmlContent String?
+  contentHash String?
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  evaluations Evaluation[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model BrandProfile {
+  id                  String                 @id @default(cuid())
+  projectId           String
+  name                String
+  description         String
+  targetAudience      String
+  personalities       String[]
+  toneProfile         Json
+  preferredVocabulary String[]
+  forbiddenVocabulary String[]
+  corpusVersion       String                 @default("corpus-v1")
+  project             Project                @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  examples             BrandExample[]
+  referenceSources     BrandReferenceSource[]
+  evaluations          Evaluation[]
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+}
+
+model BrandExample {
+  id             String       @id @default(cuid())
+  brandProfileId String
+  label          String
+  content        String
+  language       String       @default("en")
+  contentHash    String
+  brandProfile   BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+}
+
+model BrandReferenceSource {
+  id             String                  @id @default(cuid())
+  brandProfileId String
+  sourceType     ReferenceSourceType
+  sourceTitle    String
+  sourceUrl      String?
+  retrievedAt    DateTime
+  language       String                  @default("en")
+  contentHash    String
+  content        String
+  brandProfile   BrandProfile            @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+  createdAt      DateTime                @default(now())
+}
+
+model Rubric {
+  id          String            @id @default(cuid())
+  name        String
+  version     String            @unique
+  description String?
+  isActive    Boolean           @default(false)
+  dimensions  RubricDimension[]
+  evaluations Evaluation[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model RubricDimension {
+  id          String   @id @default(cuid())
+  rubricId    String
+  key         String
+  label       String
+  description String
+  weight      Float
+  maxScore    Float
+  sortOrder   Int
+  rubric      Rubric   @relation(fields: [rubricId], references: [id], onDelete: Cascade)
+
+  @@unique([rubricId, key])
+}
+
+model Evaluation {
+  id                       String               @id @default(cuid())
+  projectId                String
+  websiteId                String
+  brandProfileId           String?
+  rubricId                 String
+  inputType                EvaluationInputType
+  status                   EvaluationStatus     @default(QUEUED)
+  overallScore             Float?
+  technicalScore           Float?
+  brandScore               Float?
+  reliabilityScore         Float?
+  evaluatorModel           String?
+  evaluatorModelId         String?
+  promptVersion            String?
+  rubricVersion            String
+  referenceCorpusVersion   String?
+  technicalToolVersions    Json?
+  inputHash                String
+  startedAt                DateTime?
+  completedAt              DateTime?
+  failureCode              String?
+  failureMessage           String?
+  project                  Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  website                  Website              @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  brandProfile             BrandProfile?        @relation(fields: [brandProfileId], references: [id], onDelete: SetNull)
+  rubric                   Rubric                @relation(fields: [rubricId], references: [id])
+  technicalResult          TechnicalResult?
+  brandResult              BrandResult?
+  evidence                 EvaluationEvidence[]
+  recommendations          Recommendation[]
+  versions                 EvaluationVersion[]
+  experimentRuns           ExperimentRun[]
+  createdAt                DateTime              @default(now())
+  updatedAt                DateTime              @updatedAt
+}
+
+model TechnicalResult {
+  id                   String     @id @default(cuid())
+  evaluationId         String     @unique
+  performanceScore     Float?
+  accessibilityScore   Float?
+  seoScore             Float?
+  bestPracticesScore   Float?
+  htmlQualityScore     Float?
+  responsiveScore      Float?
+  codeQualityScore     Float?
+  labMetrics           Json?
+  fieldMetrics         Json?
+  lighthouseRaw        Json?
+  validatorRaw         Json?
+  accessibilityRaw     Json?
+  deterministicChecks  Json
+  evaluation           Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  createdAt            DateTime   @default(now())
+}
+
+model BrandResult {
+  id                String     @id @default(cuid())
+  evaluationId      String     @unique
+  dimensionScores   Json
+  evaluatorOutput   Json
+  reviewerOutput    Json?
+  insufficientEvidence Boolean @default(false)
+  evaluation        Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  createdAt         DateTime   @default(now())
+}
+
+model EvaluationEvidence {
+  id           String           @id @default(cuid())
+  evaluationId String
+  dimensionKey String
+  score        Float?
+  maxScore     Float?
+  observation  String
+  reason       String
+  excerpt      String?
+  sourceUrl    String?
+  selector     String?
+  strength     EvidenceStrength
+  evaluation   Evaluation       @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  createdAt    DateTime         @default(now())
+}
+
+model Recommendation {
+  id           String        @id @default(cuid())
+  evaluationId String
+  severity     IssueSeverity
+  dimensionKey String
+  title        String
+  description  String
+  suggestedFix String
+  evaluation   Evaluation    @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  createdAt    DateTime      @default(now())
+}
+
+model EvaluationVersion {
+  id                     String     @id @default(cuid())
+  evaluationId           String
+  evaluatorModelId       String?
+  promptVersion          String?
+  rubricVersion          String
+  referenceCorpusVersion String?
+  technicalToolVersions  Json?
+  weightSet              Json
+  reasoningConfiguration Json?
+  inputHash              String
+  evaluation             Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  createdAt              DateTime   @default(now())
+}
+
+model Experiment {
+  id          String          @id @default(cuid())
+  projectId   String
+  name        String
+  description String?
+  project     Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  runs        ExperimentRun[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model ExperimentRun {
+  id           String      @id @default(cuid())
+  experimentId String
+  evaluationId String
+  runNumber    Int
+  inputHash    String
+  modelId      String?
+  promptVersion String?
+  rubricVersion String
+  calculatedScores Json?
+  reliabilityComponents Json?
+  experiment   Experiment  @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  evaluation   Evaluation  @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  createdAt    DateTime    @default(now())
+
+  @@unique([experimentId, runNumber])
+}

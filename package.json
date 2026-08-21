@@ -1,0 +1,21 @@
+{
+  "name": "aurelis-qa",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @aurelis/web dev",
+    "dev:worker": "pnpm --filter @aurelis/worker dev",
+    "build": "pnpm -r --if-present build",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "test:e2e": "pnpm --filter @aurelis/web test:e2e",
+    "db:generate": "pnpm --filter @aurelis/database db:generate",
+    "db:migrate": "pnpm --filter @aurelis/database db:migrate",
+    "db:seed": "pnpm --filter @aurelis/database db:seed"
+  }
+}

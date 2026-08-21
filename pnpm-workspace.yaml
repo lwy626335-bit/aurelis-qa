@@ -1,0 +1,12 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+engineStrict: true
+autoInstallPeers: true
+
+allowBuilds:
+  "@prisma/engines": true
+  esbuild: true
+  prisma: true
+  unrs-resolver: false
