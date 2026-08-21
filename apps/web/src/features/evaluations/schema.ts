@@ -2,6 +2,7 @@ import { validateEvaluationUrl } from "@aurelis/evaluation";
 import { z } from "zod";
 
 const sharedFields = {
+  brandProfileId: z.string().cuid().nullable().default(null),
   projectName: z.string().trim().min(2).max(100),
   targetLabel: z.string().trim().min(2).max(120),
   language: z.enum(["en", "ja"]),

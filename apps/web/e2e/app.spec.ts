@@ -70,9 +70,23 @@ test.describe("AURELIS", () => {
     await expect(page.getByRole("heading", { name: "新しい評価" })).toBeVisible();
   });
 
+  test("creates and persists an evidence-backed brand profile", async ({ page }) => {
+    const suffix = `${Date.now()}-${test.info().project.name}`;
+    await page.goto("/dashboard/brands/new");
+    await page.getByLabel("Project name").fill(`Brand E2E ${suffix}`);
+    await page.getByLabel("Brand name").fill(`Measured brand ${suffix}`);
+    await page.getByLabel("Target audience").fill("Research teams reviewing AI-generated web content");
+    await page.getByLabel("Personalities (comma separated)").fill("Professional, Measured");
+    await page.getByLabel("Description").fill("A measured and professional brand used to verify evidence-backed evaluation workflows.");
+    await page.getByLabel(/Example copy/).fill("First measured example.\n---\nSecond measured example.\n---\nThird measured example.");
+    await page.getByRole("button", { name: "Save brand" }).click();
+    await expect(page).toHaveURL(/\/dashboard\/brands$/);
+    await expect(page.getByText(`Measured brand ${suffix}`)).toBeVisible();
+  });
+
   test("landing and dashboard have no serious or critical axe violations", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    for (const route of ["/", "/dashboard", "/dashboard/evaluations/new", "/dashboard/technical"]) {
+    for (const route of ["/", "/dashboard", "/dashboard/evaluations/new", "/dashboard/technical", "/dashboard/brands", "/dashboard/brands/new"]) {
       await page.goto(route);
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])

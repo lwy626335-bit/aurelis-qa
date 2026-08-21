@@ -1,11 +1,13 @@
 import { Info } from "@phosphor-icons/react/dist/ssr";
 
 import { EvaluationForm } from "@/components/evaluations/evaluation-form";
+import { listBrands } from "@/features/brands/service";
 import { getDictionary } from "@/i18n/server";
 
 export default async function NewEvaluationPage() {
   const { dictionary, locale } = await getDictionary();
   const copy = dictionary.evaluations;
+  const brands = await listBrands().catch(() => []);
 
   return (
     <main className="mx-auto w-full max-w-4xl px-4 py-8 md:px-7 md:py-12">
@@ -19,7 +21,7 @@ export default async function NewEvaluationPage() {
       </div>
 
       <section className="panel-flat mt-6 p-5 md:p-7">
-        <EvaluationForm dictionary={dictionary} locale={locale} />
+        <EvaluationForm brands={brands.map(({ id, name }) => ({ id, name }))} dictionary={dictionary} locale={locale} />
       </section>
     </main>
   );

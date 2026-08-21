@@ -22,10 +22,12 @@ export async function createEvaluation(input: CreateEvaluationInput) {
   return database.$transaction(async (transaction) => {
     const rubric = await transaction.rubric.findUnique({ where: { version: RUBRIC_VERSION } });
     if (!rubric) throw new Error("ACTIVE_RUBRIC_NOT_FOUND");
+    const brandProfile = input.brandProfileId ? await transaction.brandProfile.findUnique({ where: { id: input.brandProfileId } }) : null;
+    if (input.brandProfileId && !brandProfile) throw new Error("BRAND_PROFILE_NOT_FOUND");
 
-    const project =
-      (await transaction.project.findFirst({ where: { name: input.projectName } })) ??
-      (await transaction.project.create({ data: { name: input.projectName } }));
+    const project = brandProfile
+      ? await transaction.project.findUniqueOrThrow({ where: { id: brandProfile.projectId } })
+      : (await transaction.project.findFirst({ where: { name: input.projectName } })) ?? (await transaction.project.create({ data: { name: input.projectName } }));
 
     const website = await transaction.website.create({
       data: {
@@ -45,6 +47,7 @@ export async function createEvaluation(input: CreateEvaluationInput) {
       data: {
         projectId: project.id,
         websiteId: website.id,
+        brandProfileId: input.brandProfileId,
         rubricId: rubric.id,
         inputType: input.inputType,
         rubricVersion: rubric.version,
@@ -73,7 +76,7 @@ export function listEvaluations() {
 export function getEvaluation(id: string) {
   return database.evaluation.findUnique({
     where: { id },
-    include: { job: true, project: true, technicalResult: true, website: true, versions: { orderBy: { createdAt: "desc" }, take: 1 } },
+    include: { brandResult: true, evidence: true, job: true, project: true, recommendations: true, technicalResult: true, website: true, versions: { orderBy: { createdAt: "desc" }, take: 1 } },
   });
 }
 

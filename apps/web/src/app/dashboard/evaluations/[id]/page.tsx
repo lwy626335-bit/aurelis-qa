@@ -51,6 +51,7 @@ export default async function EvaluationStatusPage({ params }: { params: Promise
     timeStyle: "short",
   }).format(evaluation.createdAt);
   const technical = evaluation.technicalResult;
+  const brand = evaluation.brandResult;
   const validatorMessages = ((technical?.validatorRaw as { messages?: { type?: string }[] } | null)?.messages ?? []);
   const validatorErrors = validatorMessages.filter((message) => message.type === "error" || message.type === "non-document-error").length;
 
@@ -76,7 +77,7 @@ export default async function EvaluationStatusPage({ params }: { params: Promise
         {[
           [copy.stored, true],
           [technical ? (locale === "ja" ? "技術評価を完了" : "Technical evaluation complete") : copy.technicalUnavailable, Boolean(technical)],
-          [copy.brandUnavailable, false],
+          [brand ? (locale === "ja" ? "ブランド評価を完了" : "Brand evaluation complete") : copy.brandUnavailable, Boolean(brand)],
         ].map(([label, complete]) => (
           <article className="panel-flat min-h-36 p-5" key={String(label)}>
             {complete ? <CheckCircle aria-hidden="true" className="size-5 text-[var(--success)]" weight="fill" /> : <Circle aria-hidden="true" className="size-5 text-[var(--text-tertiary)]" />}
@@ -113,6 +114,15 @@ export default async function EvaluationStatusPage({ params }: { params: Promise
           </p>
         </section>
       )}
+
+      {brand && (
+        <section className="panel-flat mt-4 p-5 md:p-6" aria-labelledby="brand-results">
+          <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="font-mono text-[10px] text-[#aaaaff]">EVALUATOR + REVIEWER</p><h2 className="mt-2 text-xl font-medium" id="brand-results">{locale === "ja" ? "ブランドボイス評価" : "Brand voice results"}</h2></div><p className="mono-number text-4xl text-[#aaaaff]">{evaluation.brandScore?.toFixed(1)}<span className="text-sm text-[var(--text-tertiary)]"> / 100</span></p></div>
+          <div className="mt-6 space-y-4">{evaluation.evidence.filter((item) => item.dimensionKey.startsWith("brand:")).map((item) => <article className="border-l-2 border-[#8c8cff] bg-white/[0.02] p-4" key={item.id}><h3 className="text-sm font-medium">{item.dimensionKey.replace("brand:", "")}</h3><p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">{item.reason}</p>{item.excerpt && <blockquote className="mt-3 text-xs text-[var(--text-tertiary)]" lang={evaluation.website.language}>“{item.excerpt}”</blockquote>}</article>)}</div>
+        </section>
+      )}
+
+      {evaluation.failureCode && <div className="mt-4 border-l-2 border-[var(--warning)] p-4 text-xs text-[var(--text-secondary)]"><span className="font-mono text-[var(--warning)]">{evaluation.failureCode}</span>{evaluation.failureMessage && <p className="mt-2">{evaluation.failureMessage}</p>}</div>}
 
       <div className="mt-4 border-l-2 border-[var(--warning)]/60 bg-[rgba(232,196,107,0.045)] p-4 text-sm text-[var(--text-secondary)]">
         {copy.overallUnavailable}

@@ -2,6 +2,17 @@ import { z } from "zod";
 
 const evidenceStrength = z.enum(["strong", "moderate", "weak", "insufficient"]);
 
+export const brandDimensionStructuredSchema = z.object({
+  dimensionKey: z.string().min(1),
+  score: z.number().nonnegative(),
+  maxScore: z.number().positive(),
+  observation: z.string().min(1),
+  reason: z.string().min(1),
+  recommendation: z.string().min(1),
+  evidence: z.array(z.object({ excerpt: z.string().min(1), sourceId: z.string().min(1), strength: evidenceStrength })),
+  insufficientEvidence: z.boolean(),
+});
+
 export const brandDimensionResultSchema = z
   .object({
     dimensionKey: z.string().min(1),
@@ -32,6 +43,12 @@ export const brandDimensionResultSchema = z
 export const brandEvaluationOutputSchema = z.object({
   schemaVersion: z.literal("brand-evaluation-v1"),
   dimensions: z.array(brandDimensionResultSchema).min(1),
+  evaluatorNotes: z.array(z.string()),
+});
+
+export const brandEvaluationStructuredSchema = z.object({
+  schemaVersion: z.literal("brand-evaluation-v1"),
+  dimensions: z.array(brandDimensionStructuredSchema),
   evaluatorNotes: z.array(z.string()),
 });
 

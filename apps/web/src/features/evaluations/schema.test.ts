@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createEvaluationSchema } from "./schema";
 
 const shared = {
+  brandProfileId: null,
   language: "en" as const,
   projectName: "Research project",
   targetLabel: "Landing page",

@@ -201,7 +201,6 @@ export async function runTechnicalEvaluation(job: ClaimedJob) {
         update: { performanceScore: urlSnapshot ? null : performance, accessibilityScore: accessibility, seoScore: seo, bestPracticesScore: bestPractices, htmlQualityScore: htmlQuality, responsiveScore: deterministic.checks.hasViewport ? 100 : 50, codeQualityScore: 100, labMetrics: urlSnapshot ? undefined : labMetrics, lighthouseRaw: audits.lighthouse as never, validatorRaw: validator as never, accessibilityRaw: audits.accessibility as never, deterministicChecks: deterministic as never },
       }),
       database.evaluation.update({ where: { id: evaluation.id }, data: { completedAt: new Date(), failureCode: urlSnapshot ? "LIVE_PERFORMANCE_UNAVAILABLE" : null, failureMessage: urlSnapshot ? "Remote HTML was fetched with redirect and DNS checks; embedded resources were not executed, so live performance was not scored." : null, technicalScore, technicalToolVersions: { axe: audits.accessibility.testEngine.version, lighthouse: audits.lighthouse.lighthouseVersion, parse5: "8.0.0", scope: urlSnapshot ? "secured-static-snapshot" : "pasted-html-snapshot", validator: "Nu HTML Checker container" }, status: "PARTIAL" } }),
-      database.evaluationJob.update({ where: { id: job.id }, data: { lastError: null, leaseExpiresAt: null, lockedBy: null, stage: "completed", status: "COMPLETED" } }),
     ]);
     return technicalScore;
   } finally {

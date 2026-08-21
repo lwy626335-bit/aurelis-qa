@@ -6,7 +6,7 @@ import { useState } from "react";
 
 import type { Dictionary, Locale } from "@/i18n/config";
 
-export function EvaluationForm({ dictionary, locale }: { dictionary: Dictionary; locale: Locale }) {
+export function EvaluationForm({ brands, dictionary, locale }: { brands: { id: string; name: string }[]; dictionary: Dictionary; locale: Locale }) {
   const copy = dictionary.evaluations;
   const router = useRouter();
   const [inputType, setInputType] = useState<"URL" | "HTML">("URL");
@@ -19,6 +19,7 @@ export function EvaluationForm({ dictionary, locale }: { dictionary: Dictionary;
 
     const payload = {
       inputType,
+      brandProfileId: formData.get("brandProfileId") || null,
       projectName: formData.get("projectName"),
       targetLabel: formData.get("targetLabel"),
       language: formData.get("language"),
@@ -93,6 +94,14 @@ export function EvaluationForm({ dictionary, locale }: { dictionary: Dictionary;
         <select className="field mt-2" defaultValue={locale} name="language">
           <option value="en">English</option>
           <option value="ja">日本語</option>
+        </select>
+      </label>
+
+      <label className="block text-xs text-[var(--text-secondary)]">
+        {locale === "ja" ? "ブランドプロフィール（任意）" : "Brand profile (optional)"}
+        <select className="field mt-2" defaultValue="" name="brandProfileId">
+          <option value="">{locale === "ja" ? "ブランド評価なし" : "No brand evaluation"}</option>
+          {brands.map((brand) => <option key={brand.id} value={brand.id}>{brand.name}</option>)}
         </select>
       </label>
 
