@@ -65,7 +65,7 @@ export async function createEvaluation(input: CreateEvaluationInput) {
 
 export function listEvaluations() {
   return database.evaluation.findMany({
-    include: { job: true, project: true, website: true },
+    include: { job: true, project: true, technicalResult: true, website: true },
     orderBy: { createdAt: "desc" },
   });
 }
@@ -73,7 +73,7 @@ export function listEvaluations() {
 export function getEvaluation(id: string) {
   return database.evaluation.findUnique({
     where: { id },
-    include: { job: true, project: true, website: true, versions: { orderBy: { createdAt: "desc" }, take: 1 } },
+    include: { job: true, project: true, technicalResult: true, website: true, versions: { orderBy: { createdAt: "desc" }, take: 1 } },
   });
 }
 

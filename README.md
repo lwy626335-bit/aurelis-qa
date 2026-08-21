@@ -1,6 +1,6 @@
 # AURELIS QA
 
-AURELIS QA is an evidence-first platform for evaluating AI-generated websites. Phase 2 adds bilingual product surfaces and a real PostgreSQL-backed evaluation submission queue to the Phase 1 architecture and demo dashboard.
+AURELIS QA is an evidence-first platform for evaluating AI-generated websites. Phase 3 adds a real PostgreSQL-backed technical evaluation worker to the bilingual submission and reporting experience.
 
 The interface labels every sample result as `Demo dataset`. No live website audit or AI evaluation is represented as complete.
 
@@ -48,7 +48,7 @@ Playwright covers desktop Chromium, a Pixel 7 viewport, route boundaries, reduce
 
 ## Current phase boundary
 
-Implemented through Phase 2:
+Implemented through Phase 3:
 
 - Dark-only design system and self-hosted Geist fonts
 - GSAP landing motion with reduced-motion behavior
@@ -62,13 +62,14 @@ Implemented through Phase 2:
 - PostgreSQL evaluation, version metadata, and job records
 - Real queued/cancelled states without fabricated progress or scores
 - Local PostgreSQL and Nu HTML Checker services
+- Atomic job leasing and technical result persistence
+- Lighthouse lab, axe, Nu HTML Checker, and deterministic DOM/SEO analysis
 
 Not implemented:
 
-- Phase 3 browser capture, Lighthouse, validation, accessibility, and job processing
 - Phase 4 AI brand evaluation
 - Phase 5 recommendations workflow
 - Phase 6 comparison, research mode, and rubric management
 - Phase 7 GitHub and PDF integrations
 
-See [architecture](docs/architecture.md), [design system](docs/design-system.md), [security](docs/security.md), and the [Phase 2 verification record](docs/phase-2-verification.md).
+See [architecture](docs/architecture.md), [design system](docs/design-system.md), [security](docs/security.md), and the [Phase 3 verification record](docs/phase-3-verification.md).

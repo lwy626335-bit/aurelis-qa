@@ -42,7 +42,7 @@ export default async function EvaluationStatusPage({ params }: { params: Promise
     QUEUED: copy.queued,
     RUNNING: copy.running,
     COMPLETED: copy.completed,
-    PARTIAL: copy.failed,
+    PARTIAL: locale === "ja" ? "一部完了" : "Partially complete",
     FAILED: copy.failed,
     CANCELLED: copy.cancelled,
   }[evaluation.status];
@@ -50,6 +50,9 @@ export default async function EvaluationStatusPage({ params }: { params: Promise
     dateStyle: "medium",
     timeStyle: "short",
   }).format(evaluation.createdAt);
+  const technical = evaluation.technicalResult;
+  const validatorMessages = ((technical?.validatorRaw as { messages?: { type?: string }[] } | null)?.messages ?? []);
+  const validatorErrors = validatorMessages.filter((message) => message.type === "error" || message.type === "non-document-error").length;
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 md:px-7 md:py-10">
@@ -72,7 +75,7 @@ export default async function EvaluationStatusPage({ params }: { params: Promise
       <section className="mt-7 grid gap-4 md:grid-cols-3">
         {[
           [copy.stored, true],
-          [copy.technicalUnavailable, false],
+          [technical ? (locale === "ja" ? "技術評価を完了" : "Technical evaluation complete") : copy.technicalUnavailable, Boolean(technical)],
           [copy.brandUnavailable, false],
         ].map(([label, complete]) => (
           <article className="panel-flat min-h-36 p-5" key={String(label)}>
@@ -81,6 +84,35 @@ export default async function EvaluationStatusPage({ params }: { params: Promise
           </article>
         ))}
       </section>
+
+      {technical && (
+        <section className="panel-flat mt-4 p-5 md:p-6" aria-labelledby="technical-results">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="font-mono text-[10px] text-[var(--accent)]">LAB + DETERMINISTIC</p>
+              <h2 className="mt-2 text-xl font-medium" id="technical-results">{locale === "ja" ? "技術評価結果" : "Technical results"}</h2>
+            </div>
+            <p className="mono-number text-4xl">{evaluation.technicalScore?.toFixed(1)}<span className="text-sm text-[var(--text-tertiary)]"> / 100</span></p>
+          </div>
+          <dl className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {[
+              [locale === "ja" ? "パフォーマンス" : "Performance", technical.performanceScore],
+              [locale === "ja" ? "アクセシビリティ" : "Accessibility", technical.accessibilityScore],
+              ["SEO", technical.seoScore],
+              [locale === "ja" ? "ベストプラクティス" : "Best practices", technical.bestPracticesScore],
+              [locale === "ja" ? "HTML品質" : "HTML quality", technical.htmlQualityScore],
+            ].map(([label, value]) => (
+              <div className="rounded-[var(--radius-control)] border border-white/[0.07] p-4" key={String(label)}>
+                <dt className="text-[10px] text-[var(--text-tertiary)]">{label}</dt>
+                <dd className="mono-number mt-3 text-2xl">{typeof value === "number" ? value.toFixed(1) : dictionary.common.unavailable}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="mt-5 text-xs text-[var(--text-tertiary)]">
+            {locale === "ja" ? `Nu HTML Checker: エラー ${validatorErrors}件。Field Metricsは取得していません。` : `Nu HTML Checker: ${validatorErrors} errors. Field metrics were not collected.`}
+          </p>
+        </section>
+      )}
 
       <div className="mt-4 border-l-2 border-[var(--warning)]/60 bg-[rgba(232,196,107,0.045)] p-4 text-sm text-[var(--text-secondary)]">
         {copy.overallUnavailable}

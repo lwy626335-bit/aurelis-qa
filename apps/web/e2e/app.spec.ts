@@ -54,7 +54,7 @@ test.describe("AURELIS", () => {
 
     await expect(page).toHaveURL(/\/dashboard\/evaluations\/[a-z0-9]+$/);
     await expect(page.getByText("Input and reproducibility metadata stored")).toBeVisible();
-    await expect(page.getByText("Technical engine unavailable until Phase 3")).toBeVisible();
+    await expect(page.getByText("Technical evaluation queued or unavailable")).toBeVisible();
     await expect(page.getByText("Overall score unavailable", { exact: false })).toBeVisible();
     await page.getByRole("button", { name: "Cancel queued evaluation" }).click();
     await expect(page.getByText("Cancelled", { exact: true })).toBeVisible();
@@ -72,7 +72,7 @@ test.describe("AURELIS", () => {
 
   test("landing and dashboard have no serious or critical axe violations", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    for (const route of ["/", "/dashboard", "/dashboard/evaluations/new"]) {
+    for (const route of ["/", "/dashboard", "/dashboard/evaluations/new", "/dashboard/technical"]) {
       await page.goto(route);
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
