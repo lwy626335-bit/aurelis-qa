@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { CancelEvaluationButton } from "@/components/evaluations/cancel-evaluation-button";
+import { RewriteSuggestions } from "@/components/evaluations/rewrite-suggestions";
 import { getEvaluation } from "@/features/evaluations/service";
 import { getDictionary } from "@/i18n/server";
 
@@ -52,6 +53,7 @@ export default async function EvaluationStatusPage({ params }: { params: Promise
   }).format(evaluation.createdAt);
   const technical = evaluation.technicalResult;
   const brand = evaluation.brandResult;
+  const reviewerMetadata = brand?.reviewerOutput as { reliabilityComponents?: Record<string, number> } | null;
   const validatorMessages = ((technical?.validatorRaw as { messages?: { type?: string }[] } | null)?.messages ?? []);
   const validatorErrors = validatorMessages.filter((message) => message.type === "error" || message.type === "non-document-error").length;
 
@@ -85,6 +87,10 @@ export default async function EvaluationStatusPage({ params }: { params: Promise
           </article>
         ))}
       </section>
+
+      {(evaluation.overallScore !== null || evaluation.technicalScore !== null || evaluation.brandScore !== null) && <section className="panel-flat mt-4 grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-4 md:p-6">{[
+        [locale === "ja" ? "総合" : "Overall", evaluation.overallScore], [locale === "ja" ? "技術" : "Technical", evaluation.technicalScore], [locale === "ja" ? "ブランド" : "Brand", evaluation.brandScore], [locale === "ja" ? "信頼性" : "Reliability", evaluation.reliabilityScore],
+      ].map(([label, value]) => <div key={String(label)}><p className="text-[10px] text-[var(--text-tertiary)]">{label}</p><p className="mono-number mt-2 text-3xl">{typeof value === "number" ? value.toFixed(1) : dictionary.common.unavailable}</p></div>)}</section>}
 
       {technical && (
         <section className="panel-flat mt-4 p-5 md:p-6" aria-labelledby="technical-results">
@@ -121,6 +127,12 @@ export default async function EvaluationStatusPage({ params }: { params: Promise
           <div className="mt-6 space-y-4">{evaluation.evidence.filter((item) => item.dimensionKey.startsWith("brand:")).map((item) => <article className="border-l-2 border-[#8c8cff] bg-white/[0.02] p-4" key={item.id}><h3 className="text-sm font-medium">{item.dimensionKey.replace("brand:", "")}</h3><p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">{item.reason}</p>{item.excerpt && <blockquote className="mt-3 text-xs text-[var(--text-tertiary)]" lang={evaluation.website.language}>“{item.excerpt}”</blockquote>}</article>)}</div>
         </section>
       )}
+
+      {reviewerMetadata?.reliabilityComponents && <section className="panel-flat mt-4 p-5 md:p-6"><h2 className="text-lg font-medium">{locale === "ja" ? "信頼性の構成" : "Reliability components"}</h2><dl className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{Object.entries(reviewerMetadata.reliabilityComponents).map(([key, value]) => <div key={key}><dt className="text-[10px] text-[var(--text-tertiary)]">{key}</dt><dd className="mono-number mt-2 text-2xl">{value}%</dd></div>)}</dl></section>}
+
+      {evaluation.recommendations.length > 0 && <section className="panel-flat mt-4 p-5 md:p-6"><h2 className="text-lg font-medium">{locale === "ja" ? "改善提案" : "Recommendations"}</h2><div className="mt-5 space-y-4">{evaluation.recommendations.map((item) => <article className="border-t border-white/[0.07] pt-4 first:border-0 first:pt-0" key={item.id}><h3 className="text-sm font-medium">{item.title}</h3><p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{item.suggestedFix}</p></article>)}</div></section>}
+
+      {evaluation.recommendations.length > 0 && <RewriteSuggestions evaluationId={evaluation.id} locale={locale} />}
 
       {evaluation.failureCode && <div className="mt-4 border-l-2 border-[var(--warning)] p-4 text-xs text-[var(--text-secondary)]"><span className="font-mono text-[var(--warning)]">{evaluation.failureCode}</span>{evaluation.failureMessage && <p className="mt-2">{evaluation.failureMessage}</p>}</div>}
 

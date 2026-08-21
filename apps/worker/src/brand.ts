@@ -1,5 +1,5 @@
 import { database } from "@aurelis/database/client";
-import { brandEvaluationOutputSchema, brandEvaluationStructuredSchema } from "@aurelis/evaluation";
+import { brandEvaluationOutputSchema, brandEvaluationStructuredSchema, calculateReliability } from "@aurelis/evaluation";
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 
@@ -69,14 +69,23 @@ export async function runBrandEvaluation(evaluationId: string) {
   const brandScore = Math.round(reviewer.dimensions.reduce((total, item) => total + item.score, 0) * 10) / 10;
   const insufficient = reviewer.dimensions.some((item) => item.insufficientEvidence);
   const overallScore = evaluation.technicalScore === null ? null : Math.round((evaluation.technicalScore * 0.6 + brandScore * 0.4) * 10) / 10;
+  const evidenceItems = reviewer.dimensions.flatMap((item) => item.evidence);
+  const strengthValue = { insufficient: 0, moderate: 70, strong: 100, weak: 40 } as const;
+  const reliabilityComponents = {
+    evidenceCompleteness: Math.round(reviewer.dimensions.filter((item) => item.evidence.length > 0).length / reviewer.dimensions.length * 100),
+    evidenceStrength: evidenceItems.length ? Math.round(evidenceItems.reduce((total, item) => total + strengthValue[item.strength], 0) / evidenceItems.length) : 0,
+    evaluatorReviewerAgreement: Math.max(0, Math.round(100 - reviewer.dimensions.reduce((total, item) => { const original = evaluator.dimensions.find((candidate) => candidate.dimensionKey === item.dimensionKey); return total + Math.abs(item.score - (original?.score ?? 0)) / item.maxScore * 100; }, 0) / reviewer.dimensions.length)),
+    reproducibility: 100,
+  };
+  const reliabilityScore = calculateReliability(reliabilityComponents);
 
   await database.$transaction(async (transaction) => {
     await transaction.evaluationEvidence.deleteMany({ where: { evaluationId, dimensionKey: { startsWith: "brand:" } } });
     await transaction.recommendation.deleteMany({ where: { evaluationId, dimensionKey: { startsWith: "brand:" } } });
-    await transaction.brandResult.upsert({ where: { evaluationId }, create: { dimensionScores: reviewer.dimensions.map(({ dimensionKey, maxScore, score }) => ({ dimensionKey, maxScore, score })), evaluatorOutput: evaluator, evaluationId, insufficientEvidence: insufficient, reviewerOutput: reviewer }, update: { dimensionScores: reviewer.dimensions.map(({ dimensionKey, maxScore, score }) => ({ dimensionKey, maxScore, score })), evaluatorOutput: evaluator, insufficientEvidence: insufficient, reviewerOutput: reviewer } });
+    await transaction.brandResult.upsert({ where: { evaluationId }, create: { dimensionScores: reviewer.dimensions.map(({ dimensionKey, maxScore, score }) => ({ dimensionKey, maxScore, score })), evaluatorOutput: evaluator, evaluationId, insufficientEvidence: insufficient, reviewerOutput: { reliabilityComponents, result: reviewer } }, update: { dimensionScores: reviewer.dimensions.map(({ dimensionKey, maxScore, score }) => ({ dimensionKey, maxScore, score })), evaluatorOutput: evaluator, insufficientEvidence: insufficient, reviewerOutput: { reliabilityComponents, result: reviewer } } });
     await transaction.evaluationEvidence.createMany({ data: reviewer.dimensions.flatMap((item) => item.evidence.map((evidence) => ({ dimensionKey: `brand:${item.dimensionKey}`, evaluationId, excerpt: evidence.excerpt, maxScore: item.maxScore, observation: item.observation, reason: item.reason, score: item.score, strength: evidence.strength.toUpperCase() as "STRONG" | "MODERATE" | "WEAK" | "INSUFFICIENT" }))) });
     await transaction.recommendation.createMany({ data: reviewer.dimensions.filter((item) => item.recommendation.trim()).map((item) => ({ description: item.reason, dimensionKey: `brand:${item.dimensionKey}`, evaluationId, severity: "MEDIUM", suggestedFix: item.recommendation, title: item.observation.slice(0, 120) })) });
-    await transaction.evaluation.update({ where: { id: evaluationId }, data: { brandScore, completedAt: new Date(), evaluatorModel: MODEL_DISPLAY_NAME, evaluatorModelId: MODEL_ID, failureCode: null, failureMessage: null, overallScore, promptVersion: PROMPT_VERSION, referenceCorpusVersion: brand.corpusVersion, status: overallScore === null ? "PARTIAL" : "COMPLETED" } });
+    await transaction.evaluation.update({ where: { id: evaluationId }, data: { brandScore, completedAt: new Date(), evaluatorModel: MODEL_DISPLAY_NAME, evaluatorModelId: MODEL_ID, failureCode: null, failureMessage: null, overallScore, promptVersion: PROMPT_VERSION, referenceCorpusVersion: brand.corpusVersion, reliabilityScore, status: overallScore === null ? "PARTIAL" : "COMPLETED" } });
     await transaction.evaluationVersion.updateMany({ where: { evaluationId }, data: { evaluatorModelId: MODEL_ID, promptVersion: PROMPT_VERSION, referenceCorpusVersion: brand.corpusVersion } });
   });
   return brandScore;
