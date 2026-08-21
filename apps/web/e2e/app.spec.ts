@@ -84,9 +84,23 @@ test.describe("AURELIS", () => {
     await expect(page.getByText(`Measured brand ${suffix}`)).toBeVisible();
   });
 
+  test("creates immutable rubric and research experiment records", async ({ page }) => {
+    const suffix = `${Date.now()}-${test.info().project.name}`.toLowerCase();
+    await page.goto("/dashboard/rubrics");
+    await page.getByLabel("Name", { exact: true }).fill(`Research rubric ${suffix}`);
+    await page.getByLabel("Version").fill(`research-${suffix}`);
+    await page.getByRole("button", { name: "Create version" }).click();
+    await expect(page.getByText("Saved a new immutable version.")).toBeVisible();
+    await page.goto("/dashboard/research");
+    await page.getByLabel("Experiment name").fill(`Experiment ${suffix}`);
+    await page.getByLabel("Runs").fill("1");
+    await page.getByRole("button", { name: "Create", exact: true }).click();
+    await expect(page.getByText(`Experiment ${suffix}`)).toBeVisible();
+  });
+
   test("landing and dashboard have no serious or critical axe violations", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    for (const route of ["/", "/dashboard", "/dashboard/evaluations/new", "/dashboard/technical", "/dashboard/brands", "/dashboard/brands/new"]) {
+    for (const route of ["/", "/dashboard", "/dashboard/evaluations/new", "/dashboard/technical", "/dashboard/brands", "/dashboard/brands/new", "/dashboard/history", "/dashboard/compare", "/dashboard/rubrics", "/dashboard/research"]) {
       await page.goto(route);
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])

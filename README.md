@@ -1,6 +1,6 @@
 # AURELIS QA
 
-AURELIS QA is an evidence-first platform for evaluating AI-generated websites. Phase 5 adds deterministic reliability, evidence/recommendation reporting, and suggestion-only rewrites to the hybrid evaluation workflow.
+AURELIS QA is an evidence-first platform for evaluating AI-generated websites. Phase 6 adds comparable history, immutable rubrics, and repeatability experiments to the hybrid evaluation workflow.
 
 The interface labels every sample result as `Demo dataset`. No live website audit or AI evaluation is represented as complete.
 
@@ -48,7 +48,7 @@ Playwright covers desktop Chromium, a Pixel 7 viewport, route boundaries, reduce
 
 ## Current phase boundary
 
-Implemented through Phase 5:
+Implemented through Phase 6:
 
 - Dark-only design system and self-hosted Geist fonts
 - GSAP landing motion with reduced-motion behavior
@@ -68,10 +68,11 @@ Implemented through Phase 5:
 - OpenAI Responses API evaluator/reviewer adapter with deterministic evidence anchoring
 - Application-owned overall and reliability calculation
 - Evidence, recommendations, and suggestion-only AI rewrite reporting
+- History, condition-aware comparison, and immutable rubric versions
+- Research experiments with deterministic mean, standard deviation, and variance
 
 Not implemented:
 
-- Phase 6 comparison, research mode, and rubric management
 - Phase 7 GitHub and PDF integrations
 
-See [architecture](docs/architecture.md), [design system](docs/design-system.md), [security](docs/security.md), and the [Phase 5 verification record](docs/phase-5-verification.md).
+See [architecture](docs/architecture.md), [design system](docs/design-system.md), [security](docs/security.md), and the [Phase 6 verification record](docs/phase-6-verification.md).
