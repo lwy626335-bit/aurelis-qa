@@ -1,12 +1,13 @@
-import { ArrowLeft, CheckCircle, Circle, Clock } from "@phosphor-icons/react/dist/ssr";
-import { demoReport } from "@aurelis/database/demo";
+import { ArrowLeft, Clock } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { CancelEvaluationButton } from "@/components/evaluations/cancel-evaluation-button";
 import { DeleteEvaluationButton } from "@/components/evaluations/delete-evaluation-button";
+import { EvaluationStatusPanel } from "@/components/evaluations/evaluation-status-panel";
 import { RewriteSuggestions } from "@/components/evaluations/rewrite-suggestions";
 import { getEvaluation } from "@/features/evaluations/service";
+import { localeCode, localize } from "@/i18n/config";
 import { getDictionary } from "@/i18n/server";
 
 export const dynamic = "force-dynamic";
@@ -14,41 +15,12 @@ export const dynamic = "force-dynamic";
 export default async function EvaluationStatusPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { dictionary, locale } = await getDictionary();
-  const demoIssue = demoReport.issues.find((issue) => issue.id === id);
-  if (demoIssue) {
-    return (
-      <main className="mx-auto w-full max-w-4xl px-4 py-8 md:px-7 md:py-10">
-        <Link className="inline-flex items-center gap-2 text-xs text-[var(--text-tertiary)] hover:text-[var(--text)]" href="/dashboard">
-          <ArrowLeft aria-hidden="true" className="size-4" /> {dictionary.future.returnDashboard}
-        </Link>
-        <article className="panel-flat mt-7 p-6 md:p-8">
-          <div className="flex items-center justify-between gap-4">
-            <span className="rounded-[6px] border border-white/10 px-2.5 py-1 font-mono text-[10px] text-[var(--text-secondary)]">{demoIssue.severity}</span>
-            <span className="font-mono text-[9px] text-[var(--accent)]">{dictionary.common.demoDataset}</span>
-          </div>
-          <h1 className="mt-8 text-3xl font-medium tracking-[-0.04em]">{demoIssue.title}</h1>
-          <p className="mt-3 text-xs text-[var(--text-tertiary)]" lang="en">{demoIssue.dimension}</p>
-          <dl className="mt-8 grid gap-6 md:grid-cols-2">
-            <div><dt className="font-mono text-[10px] text-[var(--accent)]">{dictionary.landing.evidence}</dt><dd className="mt-3 text-sm leading-7 text-[var(--text-secondary)]" lang="en">{demoIssue.evidence}</dd></div>
-            <div><dt className="font-mono text-[10px] text-[var(--accent)]">{dictionary.landing.recommendation}</dt><dd className="mt-3 text-sm leading-7 text-[var(--text-secondary)]" lang="en">{demoIssue.recommendation}</dd></div>
-          </dl>
-        </article>
-      </main>
-    );
-  }
   const evaluation = await getEvaluation(id).catch(() => null);
   if (!evaluation) notFound();
 
   const copy = dictionary.evaluations;
-  const statusLabel = {
-    QUEUED: copy.queued,
-    RUNNING: copy.running,
-    COMPLETED: copy.completed,
-    PARTIAL: locale === "ja" ? "一部完了" : "Partially complete",
-    FAILED: copy.failed,
-    CANCELLED: copy.cancelled,
-  }[evaluation.status];
-  const createdAt = new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", {
+  const text = <T,>(values: { en: T; ja: T; zh: T }) => localize(locale, values);
+  const createdAt = new Intl.DateTimeFormat(localeCode(locale), {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(evaluation.createdAt);
@@ -57,6 +29,7 @@ export default async function EvaluationStatusPage({ params }: { params: Promise
   const reviewerMetadata = brand?.reviewerOutput as { reliabilityComponents?: Record<string, number> } | null;
   const validatorMessages = ((technical?.validatorRaw as { messages?: { type?: string }[] } | null)?.messages ?? []);
   const validatorErrors = validatorMessages.filter((message) => message.type === "error" || message.type === "non-document-error").length;
+  const validatorExecuted = Boolean(technical?.validatorRaw);
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 md:px-7 md:py-10">
@@ -70,27 +43,33 @@ export default async function EvaluationStatusPage({ params }: { params: Promise
           <h1 className="mt-3 text-4xl font-medium tracking-[-0.045em]">{copy.detailTitle}</h1>
           <p className="mt-3 text-sm text-[var(--text-secondary)]">{evaluation.project.name} / {evaluation.website.label}</p>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="rounded-[6px] border border-[rgba(232,196,107,0.2)] bg-[rgba(232,196,107,0.07)] px-3 py-1.5 font-mono text-xs text-[var(--warning)]">{statusLabel}</span>
-          {evaluation.status === "QUEUED" && <CancelEvaluationButton dictionary={dictionary} evaluationId={evaluation.id} />}
-        </div>
+        {evaluation.status === "QUEUED" && evaluation.job?.status === "QUEUED" && (
+          <CancelEvaluationButton dictionary={dictionary} evaluationId={evaluation.id} locale={locale} />
+        )}
       </div>
 
-      <section className="mt-7 grid gap-4 md:grid-cols-3">
-        {[
-          [copy.stored, true],
-          [technical ? (locale === "ja" ? "技術評価を完了" : "Technical evaluation complete") : copy.technicalUnavailable, Boolean(technical)],
-          [brand ? (locale === "ja" ? "ブランド評価を完了" : "Brand evaluation complete") : copy.brandUnavailable, Boolean(brand)],
-        ].map(([label, complete]) => (
-          <article className="panel-flat min-h-36 p-5" key={String(label)}>
-            {complete ? <CheckCircle aria-hidden="true" className="size-5 text-[var(--success)]" weight="fill" /> : <Circle aria-hidden="true" className="size-5 text-[var(--text-tertiary)]" />}
-            <p className="mt-7 text-sm leading-6 text-[var(--text-secondary)]">{label}</p>
-          </article>
-        ))}
-      </section>
+      <EvaluationStatusPanel
+        evaluationId={evaluation.id}
+        key={`${evaluation.status}:${Boolean(technical)}:${Boolean(brand)}`}
+        initialSnapshot={{
+          evaluationStatus: evaluation.status,
+          jobStatus: evaluation.job?.status ?? null,
+          stage: evaluation.job?.stage ?? null,
+          attemptCount: evaluation.job?.attemptCount ?? 0,
+          maxAttempts: evaluation.job?.maxAttempts ?? 0,
+          hasTechnicalResult: Boolean(technical),
+          hasBrandResult: Boolean(brand),
+          failureCode: evaluation.failureCode,
+          failureMessage: evaluation.failureMessage,
+        }}
+        locale={locale}
+      />
 
       {(evaluation.overallScore !== null || evaluation.technicalScore !== null || evaluation.brandScore !== null) && <section className="panel-flat mt-4 grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-4 md:p-6">{[
-        [locale === "ja" ? "総合" : "Overall", evaluation.overallScore], [locale === "ja" ? "技術" : "Technical", evaluation.technicalScore], [locale === "ja" ? "ブランド" : "Brand", evaluation.brandScore], [locale === "ja" ? "信頼性" : "Reliability", evaluation.reliabilityScore],
+        [text({ en: "Overall", ja: "総合", zh: "综合" }), evaluation.overallScore],
+        [text({ en: "Technical", ja: "技術", zh: "技术" }), evaluation.technicalScore],
+        [text({ en: "Brand", ja: "ブランド", zh: "品牌" }), evaluation.brandScore],
+        [text({ en: "Reliability", ja: "信頼性", zh: "可信度" }), evaluation.reliabilityScore],
       ].map(([label, value]) => <div key={String(label)}><p className="text-[10px] text-[var(--text-tertiary)]">{label}</p><p className="mono-number mt-2 text-3xl">{typeof value === "number" ? value.toFixed(1) : dictionary.common.unavailable}</p></div>)}</section>}
 
       {technical && (
@@ -98,17 +77,17 @@ export default async function EvaluationStatusPage({ params }: { params: Promise
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="font-mono text-[10px] text-[var(--accent)]">LAB + DETERMINISTIC</p>
-              <h2 className="mt-2 text-xl font-medium" id="technical-results">{locale === "ja" ? "技術評価結果" : "Technical results"}</h2>
+              <h2 className="mt-2 text-xl font-medium" id="technical-results">{text({ en: "Technical results", ja: "技術評価結果", zh: "技术评估结果" })}</h2>
             </div>
             <p className="mono-number text-4xl">{evaluation.technicalScore?.toFixed(1)}<span className="text-sm text-[var(--text-tertiary)]"> / 100</span></p>
           </div>
           <dl className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {[
-              [locale === "ja" ? "パフォーマンス" : "Performance", technical.performanceScore],
-              [locale === "ja" ? "アクセシビリティ" : "Accessibility", technical.accessibilityScore],
+              [text({ en: "Performance", ja: "パフォーマンス", zh: "性能" }), technical.performanceScore],
+              [text({ en: "Accessibility", ja: "アクセシビリティ", zh: "无障碍" }), technical.accessibilityScore],
               ["SEO", technical.seoScore],
-              [locale === "ja" ? "ベストプラクティス" : "Best practices", technical.bestPracticesScore],
-              [locale === "ja" ? "HTML品質" : "HTML quality", technical.htmlQualityScore],
+              [text({ en: "Best practices", ja: "ベストプラクティス", zh: "最佳实践" }), technical.bestPracticesScore],
+              [text({ en: "HTML quality", ja: "HTML品質", zh: "HTML 质量" }), technical.htmlQualityScore],
             ].map(([label, value]) => (
               <div className="rounded-[var(--radius-control)] border border-white/[0.07] p-4" key={String(label)}>
                 <dt className="text-[10px] text-[var(--text-tertiary)]">{label}</dt>
@@ -117,31 +96,33 @@ export default async function EvaluationStatusPage({ params }: { params: Promise
             ))}
           </dl>
           <p className="mt-5 text-xs text-[var(--text-tertiary)]">
-            {locale === "ja" ? `Nu HTML Checker: エラー ${validatorErrors}件。Field Metricsは取得していません。` : `Nu HTML Checker: ${validatorErrors} errors. Field metrics were not collected.`}
+            {validatorExecuted
+              ? text({ en: `Nu HTML Checker: ${validatorErrors} errors. Field metrics were not collected.`, ja: `Nu HTML Checker: エラー ${validatorErrors}件。実利用データは取得していません。`, zh: `Nu HTML Checker：发现 ${validatorErrors} 个错误。未采集现场指标。` })
+              : text({ en: "Nu HTML Checker was not run. Field metrics were not collected.", ja: "Nu HTML Checkerは未実行です。実利用データも取得していません。", zh: "未运行 Nu HTML Checker，也未采集现场指标。" })}
           </p>
         </section>
       )}
 
       {brand && (
         <section className="panel-flat mt-4 p-5 md:p-6" aria-labelledby="brand-results">
-          <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="font-mono text-[10px] text-[#aaaaff]">EVALUATOR + REVIEWER</p><h2 className="mt-2 text-xl font-medium" id="brand-results">{locale === "ja" ? "ブランドボイス評価" : "Brand voice results"}</h2></div><p className="mono-number text-4xl text-[#aaaaff]">{evaluation.brandScore?.toFixed(1)}<span className="text-sm text-[var(--text-tertiary)]"> / 100</span></p></div>
-          <div className="mt-6 space-y-4">{evaluation.evidence.filter((item) => item.dimensionKey.startsWith("brand:")).map((item) => <article className="border-l-2 border-[#8c8cff] bg-white/[0.02] p-4" key={item.id}><h3 className="text-sm font-medium">{item.dimensionKey.replace("brand:", "")}</h3><p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">{item.reason}</p>{item.excerpt && <blockquote className="mt-3 text-xs text-[var(--text-tertiary)]" lang={evaluation.website.language}>“{item.excerpt}”</blockquote>}</article>)}</div>
+          <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="font-mono text-[10px] text-[var(--accent)]">EVALUATOR + REVIEWER</p><h2 className="mt-2 text-xl font-medium" id="brand-results">{text({ en: "Brand voice results", ja: "ブランドボイス評価", zh: "品牌语调评估结果" })}</h2></div><p className="mono-number text-4xl text-[var(--accent)]">{evaluation.brandScore?.toFixed(1)}<span className="text-sm text-[var(--text-tertiary)]"> / 100</span></p></div>
+          <div className="mt-6 space-y-4">{evaluation.evidence.filter((item) => item.dimensionKey.startsWith("brand:")).map((item) => <article className="border-l-2 border-[var(--accent)] bg-white/[0.02] p-4" key={item.id}><h3 className="text-sm font-medium">{item.dimensionKey.replace("brand:", "")}</h3><p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">{item.reason}</p>{item.excerpt && <blockquote className="mt-3 text-xs text-[var(--text-tertiary)]" lang={evaluation.website.language}>“{item.excerpt}”</blockquote>}</article>)}</div>
         </section>
       )}
 
-      {reviewerMetadata?.reliabilityComponents && <section className="panel-flat mt-4 p-5 md:p-6"><h2 className="text-lg font-medium">{locale === "ja" ? "信頼性の構成" : "Reliability components"}</h2><dl className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{Object.entries(reviewerMetadata.reliabilityComponents).map(([key, value]) => <div key={key}><dt className="text-[10px] text-[var(--text-tertiary)]">{key}</dt><dd className="mono-number mt-2 text-2xl">{value}%</dd></div>)}</dl></section>}
+      {reviewerMetadata?.reliabilityComponents && <section className="panel-flat mt-4 p-5 md:p-6"><h2 className="text-lg font-medium">{text({ en: "Reliability components", ja: "信頼性の構成", zh: "可信度构成" })}</h2><dl className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{Object.entries(reviewerMetadata.reliabilityComponents).map(([key, value]) => <div key={key}><dt className="text-[10px] text-[var(--text-tertiary)]">{key}</dt><dd className="mono-number mt-2 text-2xl">{value}%</dd></div>)}</dl></section>}
 
-      {evaluation.recommendations.length > 0 && <section className="panel-flat mt-4 p-5 md:p-6"><h2 className="text-lg font-medium">{locale === "ja" ? "改善提案" : "Recommendations"}</h2><div className="mt-5 space-y-4">{evaluation.recommendations.map((item) => <article className="border-t border-white/[0.07] pt-4 first:border-0 first:pt-0" key={item.id}><h3 className="text-sm font-medium">{item.title}</h3><p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{item.suggestedFix}</p></article>)}</div></section>}
+      {evaluation.recommendations.length > 0 && <section className="panel-flat mt-4 p-5 md:p-6"><h2 className="text-lg font-medium">{text({ en: "Recommendations", ja: "改善提案", zh: "改进建议" })}</h2><div className="mt-5 space-y-4">{evaluation.recommendations.map((item) => <article className="border-t border-white/[0.07] pt-4 first:border-0 first:pt-0" key={item.id}><h3 className="text-sm font-medium">{item.title}</h3><p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{item.suggestedFix}</p></article>)}</div></section>}
 
       {evaluation.recommendations.length > 0 && <RewriteSuggestions evaluationId={evaluation.id} locale={locale} />}
 
       {evaluation.failureCode && <div className="mt-4 border-l-2 border-[var(--warning)] p-4 text-xs text-[var(--text-secondary)]"><span className="font-mono text-[var(--warning)]">{evaluation.failureCode}</span>{evaluation.failureMessage && <p className="mt-2">{evaluation.failureMessage}</p>}</div>}
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-white/[0.07] pt-5"><a className="text-xs text-[var(--accent)] underline underline-offset-4" href={`/api/reports/${evaluation.id}/pdf`}>{locale === "ja" ? "PDFを出力" : "Export PDF"}</a><DeleteEvaluationButton evaluationId={evaluation.id} locale={locale} /></div>
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-white/[0.07] pt-5"><a className="text-xs text-[var(--accent)] underline underline-offset-4" href={`/api/reports/${evaluation.id}/pdf`}>{text({ en: "Export PDF", ja: "PDFを出力", zh: "导出 PDF" })}</a><DeleteEvaluationButton evaluationId={evaluation.id} locale={locale} /></div>
 
-      <div className="mt-4 border-l-2 border-[var(--warning)]/60 bg-[rgba(232,196,107,0.045)] p-4 text-sm text-[var(--text-secondary)]">
+      {evaluation.overallScore === null && <div className="mt-4 border-l-2 border-[var(--warning)]/60 bg-[rgba(232,196,107,0.045)] p-4 text-sm text-[var(--text-secondary)]">
         {copy.overallUnavailable}
-      </div>
+      </div>}
 
       <section className="panel-flat mt-4 p-5 md:p-6">
         <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]"><Clock aria-hidden="true" className="size-4" /> {createdAt}</div>

@@ -1,7 +1,5 @@
-import { DashboardOverview } from "@/components/dashboard/dashboard-overview";
-import { getDictionary } from "@/i18n/server";
+import { redirect } from "next/navigation";
 
-export default async function DashboardPage() {
-  const { dictionary, locale } = await getDictionary();
-  return <DashboardOverview dictionary={dictionary} locale={locale} />;
+export default function DashboardPage() {
+  redirect("/dashboard/demo");
 }

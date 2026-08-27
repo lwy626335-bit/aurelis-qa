@@ -1,0 +1,48 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Chrome",
+      "request": "launch",
+      "type": "chrome",
+      "url": "http://localhost:8080",
+      "webRoot": "${workspaceFolder}"
+    },
+
+    {
+      "name": "Attach to Chrome",
+      "port": 9222,
+      "request": "attach",
+      "type": "chrome",
+      "webRoot": "${workspaceFolder}"
+    },
+    {
+      "name": "AURELIS: full-stack debug",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${workspaceFolder}\\.vscode\\start-debug.ps1\"",
+      "cwd": "${workspaceFolder}",
+      "serverReadyAction": {
+        "action": "startDebugging",
+        "name": "AURELIS: Edge client",
+        "killOnServerStop": true,
+        "pattern": "- Local:\\s+https?://[^\\s]+"
+      }
+    },
+    {
+      "name": "AURELIS: Edge client",
+      "type": "msedge",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "port": 9333,
+      "timeout": 30000,
+      "runtimeExecutable": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+      "runtimeArgs": ["--new-window", "--no-first-run", "--no-default-browser-check"],
+      "userDataDir": true,
+      "webRoot": "${workspaceFolder}/apps/web",
+      "presentation": {
+        "hidden": true
+      }
+    }
+  ]
+}

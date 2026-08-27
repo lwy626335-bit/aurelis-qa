@@ -3,6 +3,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 
 import { database } from "@aurelis/database/client";
+import { demoReport } from "@aurelis/database/demo";
 
 import type { CreateEvaluationInput } from "./schema";
 
@@ -68,6 +69,7 @@ export async function createEvaluation(input: CreateEvaluationInput) {
 
 export function listEvaluations() {
   return database.evaluation.findMany({
+    where: { inputHash: { not: demoReport.metadata.inputHash } },
     include: { job: true, project: true, technicalResult: true, website: true },
     orderBy: { createdAt: "desc" },
   });
@@ -77,6 +79,28 @@ export function getEvaluation(id: string) {
   return database.evaluation.findUnique({
     where: { id },
     include: { brandResult: true, evidence: true, job: true, project: true, recommendations: true, technicalResult: true, website: true, versions: { orderBy: { createdAt: "desc" }, take: 1 } },
+  });
+}
+
+export function getEvaluationStatus(id: string) {
+  return database.evaluation.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      status: true,
+      failureCode: true,
+      failureMessage: true,
+      technicalResult: { select: { id: true } },
+      brandResult: { select: { id: true } },
+      job: {
+        select: {
+          status: true,
+          stage: true,
+          attemptCount: true,
+          maxAttempts: true,
+        },
+      },
+    },
   });
 }
 

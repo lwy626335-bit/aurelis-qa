@@ -7,7 +7,7 @@ export const createBrandSchema = z.object({
   description: z.string().trim().min(20).max(2_000),
   examples: z.array(exampleSchema).max(10),
   forbiddenVocabulary: z.array(z.string().trim().min(1).max(80)).max(100),
-  language: z.enum(["en", "ja"]),
+  language: z.enum(["en", "ja", "zh"]),
   name: z.string().trim().min(2).max(100),
   personalities: z.array(z.string().trim().min(1).max(50)).min(1).max(10),
   preferredVocabulary: z.array(z.string().trim().min(1).max(80)).max(100),

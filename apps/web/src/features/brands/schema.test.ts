@@ -12,6 +12,14 @@ describe("createBrandSchema", () => {
     expect(createBrandSchema.safeParse({ ...base, examples: [1, 2, 3].map((index) => ({ content: `Example copy ${index}`, label: `Example ${index}` })) }).success).toBe(true);
   });
 
+  it("accepts Simplified Chinese content", () => {
+    expect(createBrandSchema.safeParse({
+      ...base,
+      language: "zh",
+      examples: [1, 2, 3].map((index) => ({ content: `中文品牌示例 ${index}`, label: `示例 ${index}` })),
+    }).success).toBe(true);
+  });
+
   it("rejects an insufficient corpus", () => {
     const result = createBrandSchema.safeParse({ ...base, examples: [{ content: "One short example", label: "Example" }] });
     expect(result.success).toBe(false);

@@ -9,7 +9,9 @@ export async function getLocale(): Promise<Locale> {
   if (isLocale(savedLocale)) return savedLocale;
 
   const preferredLanguage = (await headers()).get("accept-language")?.split(",")[0].toLowerCase();
-  return preferredLanguage?.startsWith("ja") ? "ja" : "en";
+  if (preferredLanguage?.startsWith("ja")) return "ja";
+  if (preferredLanguage?.startsWith("zh")) return "zh";
+  return "en";
 }
 
 export async function getDictionary() {

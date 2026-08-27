@@ -15,6 +15,11 @@ describe("createEvaluationSchema", () => {
     expect(result.success).toBe(true);
   });
 
+  it("accepts Simplified Chinese as the content language", () => {
+    const result = createEvaluationSchema.safeParse({ ...shared, language: "zh", inputType: "URL", url: "https://example.com/zh" });
+    expect(result.success).toBe(true);
+  });
+
   it("rejects a private URL", () => {
     const result = createEvaluationSchema.safeParse({ ...shared, inputType: "URL", url: "http://127.0.0.1/admin" });
     expect(result.success).toBe(false);

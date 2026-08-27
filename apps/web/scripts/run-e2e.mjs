@@ -3,7 +3,8 @@ import { spawn } from "node:child_process";
 const appDirectory = new URL("../", import.meta.url);
 const nextCli = "node_modules/next/dist/bin/next";
 const playwrightCli = "node_modules/@playwright/test/cli.js";
-const targetUrl = "http://localhost:3000";
+const targetUrl = process.env.AURELIS_E2E_URL ?? "http://localhost:3000";
+const targetPort = new URL(targetUrl).port || "3000";
 const forwardedArguments = process.argv.slice(2).filter((argument, index) => argument !== "--" || index > 0);
 
 function run(command, args, options = {}) {
@@ -56,7 +57,7 @@ try {
     const build = await run(process.execPath, [nextCli, "build"]);
     if (build.code !== 0) process.exit(build.code);
 
-    server = spawn(process.execPath, [nextCli, "start"], {
+    server = spawn(process.execPath, [nextCli, "start", "-p", targetPort], {
       cwd: appDirectory,
       detached: process.platform !== "win32",
       env: process.env,
@@ -67,7 +68,7 @@ try {
   }
 
   const tests = await run(process.execPath, [playwrightCli, "test", ...forwardedArguments], {
-    env: { ...process.env, AURELIS_EXTERNAL_SERVER: "true" },
+    env: { ...process.env, AURELIS_E2E_URL: targetUrl, AURELIS_EXTERNAL_SERVER: "true" },
   });
   exitCode = tests.code;
 } catch (error) {

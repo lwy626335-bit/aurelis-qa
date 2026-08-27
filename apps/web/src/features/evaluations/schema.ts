@@ -5,7 +5,7 @@ const sharedFields = {
   brandProfileId: z.string().cuid().nullable().default(null),
   projectName: z.string().trim().min(2).max(100),
   targetLabel: z.string().trim().min(2).max(120),
-  language: z.enum(["en", "ja"]),
+  language: z.enum(["en", "ja", "zh"]),
 };
 
 const urlInput = z
