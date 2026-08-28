@@ -2,6 +2,7 @@ node_modules/
 .lighthouse-profile/
 .pnpm-store/
 .next/
+next-env.d.ts
 out/
 dist/
 coverage/

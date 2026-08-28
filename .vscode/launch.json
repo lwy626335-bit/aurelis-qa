@@ -22,6 +22,11 @@
       "request": "launch",
       "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${workspaceFolder}\\.vscode\\start-debug.ps1\"",
       "cwd": "${workspaceFolder}",
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**",
+        "!**/.next/dev/**/*runtime.js.map"
+      ],
       "serverReadyAction": {
         "action": "startDebugging",
         "name": "AURELIS: Edge client",
