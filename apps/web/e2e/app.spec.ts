@@ -66,62 +66,6 @@ test.describe("AURELIS", () => {
     await expect(page.getByRole("heading", { name: "Priority findings" })).toBeVisible();
   });
 
-  test("dashboard route feedback travels along the persistent frame", async ({ page }, testInfo) => {
-    await page.route("**/dashboard/technical**", async (route) => {
-      const headers = route.request().headers();
-      if (headers["next-router-prefetch"] || headers.purpose === "prefetch") {
-        await route.abort();
-        return;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 520));
-      await route.continue();
-    });
-    await page.goto("/dashboard/demo");
-
-    if (testInfo.project.name === "mobile-chromium") {
-      await page.getByRole("button", { name: "Open dashboard navigation" }).click();
-    }
-    await page.getByRole("link", { name: "Technical" }).filter({ visible: true }).click();
-    await expect(page.locator("[data-route-content]")).toHaveAttribute("aria-busy", "true");
-    await page.waitForTimeout(160);
-
-    const filament = page.locator(`[data-route-filament="${testInfo.project.name === "mobile-chromium" ? "mobile" : "desktop"}"]`);
-    const firstTransform = await filament.evaluate((element) => getComputedStyle(element).transform);
-    expect(Number(await filament.evaluate((element) => getComputedStyle(element).opacity))).toBeGreaterThan(0.1);
-    await page.waitForTimeout(120);
-    const secondTransform = await filament.evaluate((element) => getComputedStyle(element).transform);
-    expect(secondTransform).not.toBe(firstTransform);
-    await page.screenshot({ path: testInfo.outputPath("route-filament.png") });
-    await expect(page).toHaveURL(/\/dashboard\/technical$/);
-  });
-
-  test("reduced motion keeps route feedback static", async ({ page }, testInfo) => {
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.route("**/dashboard/technical**", async (route) => {
-      const headers = route.request().headers();
-      if (headers["next-router-prefetch"] || headers.purpose === "prefetch") {
-        await route.abort();
-        return;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 520));
-      await route.continue();
-    });
-    await page.goto("/dashboard/demo");
-
-    if (testInfo.project.name === "mobile-chromium") {
-      await page.getByRole("button", { name: "Open dashboard navigation" }).click();
-    }
-    await page.getByRole("link", { name: "Technical" }).filter({ visible: true }).click();
-    await page.waitForTimeout(160);
-
-    const filament = page.locator(`[data-route-filament="${testInfo.project.name === "mobile-chromium" ? "mobile" : "desktop"}"]`);
-    const firstTransform = await filament.evaluate((element) => getComputedStyle(element).transform);
-    await page.waitForTimeout(120);
-    const secondTransform = await filament.evaluate((element) => getComputedStyle(element).transform);
-    expect(secondTransform).toBe(firstTransform);
-    await expect(page).toHaveURL(/\/dashboard\/technical$/);
-  });
-
   test("creates, persists, and cancels a real queued evaluation", async ({ page }) => {
     const suffix = `${Date.now()}-${test.info().project.name}`;
     await page.goto("/dashboard/evaluations/new");

@@ -5,12 +5,10 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { useRouteMotion } from "@/components/motion/route-motion-provider";
 import { localize, type Locale } from "@/i18n/config";
 
 export function DeleteEvaluationButton({ evaluationId, locale }: { evaluationId: string; locale: Locale }) {
   const router = useRouter();
-  const { startNavigation } = useRouteMotion();
   const text = <T,>(values: { en: T; ja: T; zh: T }) => localize(locale, values);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -24,7 +22,6 @@ export function DeleteEvaluationButton({ evaluationId, locale }: { evaluationId:
       if (!response.ok) {
         throw new Error("Deletion failed");
       }
-      startNavigation("/dashboard/history", "completion");
       router.push("/dashboard/history");
       router.refresh();
     } catch {

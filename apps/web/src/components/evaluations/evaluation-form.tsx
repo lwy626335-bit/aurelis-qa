@@ -6,14 +6,12 @@ import { useState } from "react";
 
 import { AsyncStatus } from "@/components/ui/async-status";
 import { Button } from "@/components/ui/button";
-import { useRouteMotion } from "@/components/motion/route-motion-provider";
 import { localize, type Dictionary, type Locale } from "@/i18n/config";
 
 export function EvaluationForm({ brands, dictionary, locale }: { brands: { id: string; name: string }[]; dictionary: Dictionary; locale: Locale }) {
   const copy = dictionary.evaluations;
   const text = <T,>(values: { en: T; ja: T; zh: T }) => localize(locale, values);
   const router = useRouter();
-  const { startNavigation } = useRouteMotion();
   const [inputType, setInputType] = useState<"URL" | "HTML">("URL");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -49,7 +47,6 @@ export function EvaluationForm({ brands, dictionary, locale }: { brands: { id: s
         return;
       }
       const destination = `/dashboard/evaluations/${result.evaluationId}`;
-      startNavigation(destination, "completion");
       router.push(destination);
     } catch {
       setError(copy.createFailed);

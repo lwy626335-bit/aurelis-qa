@@ -5,7 +5,6 @@ import { useState } from "react";
 
 import { AsyncStatus } from "@/components/ui/async-status";
 import { Button } from "@/components/ui/button";
-import { useRouteMotion } from "@/components/motion/route-motion-provider";
 import { localize, type Locale } from "@/i18n/config";
 
 const splitList = (value: FormDataEntryValue | null) => String(value ?? "").split(",").map((item) => item.trim()).filter(Boolean);
@@ -13,7 +12,6 @@ const splitList = (value: FormDataEntryValue | null) => String(value ?? "").spli
 export function BrandForm({ locale }: { locale: Locale }) {
   const text = <T,>(values: { en: T; ja: T; zh: T }) => localize(locale, values);
   const router = useRouter();
-  const { startNavigation } = useRouteMotion();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -31,7 +29,6 @@ export function BrandForm({ locale }: { locale: Locale }) {
       if (!response.ok || !result.brandId) {
         throw new Error("Invalid brand profile");
       }
-      startNavigation("/dashboard/brands", "completion");
       router.push("/dashboard/brands");
       router.refresh();
     } catch {

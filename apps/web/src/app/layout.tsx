@@ -6,7 +6,6 @@ import { GeistSans } from "geist/font/sans";
 
 import { localize } from "@/i18n/config";
 import { getLocale } from "@/i18n/server";
-import { RouteMotionProvider } from "@/components/motion/route-motion-provider";
 
 import "./globals.css";
 
@@ -46,7 +45,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang={locale === "zh" ? "zh-CN" : locale} data-theme="dark" data-scroll-behavior="smooth">
       <body className={`${GeistSans.variable} ${GeistMono.variable}`}>
-        <RouteMotionProvider>{children}</RouteMotionProvider>
+        {children}
       </body>
     </html>
   );
