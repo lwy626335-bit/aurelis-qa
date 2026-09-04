@@ -20,6 +20,12 @@ describe("createEvaluationSchema", () => {
     expect(result.success).toBe(true);
   });
 
+  it("accepts AI generation context without requiring it for normal pages", () => {
+    const result = createEvaluationSchema.parse({ ...shared, aiGenerated: true, aiGenerator: "v0", originalPrompt: "Create a measured landing page", inputType: "URL", url: "https://example.com" });
+    expect(result.aiGenerated).toBe(true);
+    expect(createEvaluationSchema.parse({ ...shared, inputType: "URL", url: "https://example.com" }).aiGenerated).toBe(false);
+  });
+
   it("rejects a private URL", () => {
     const result = createEvaluationSchema.safeParse({ ...shared, inputType: "URL", url: "http://127.0.0.1/admin" });
     expect(result.success).toBe(false);

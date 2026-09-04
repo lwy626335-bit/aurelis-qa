@@ -1,4 +1,4 @@
-import { ArrowLeft, Clock } from "@phosphor-icons/react/dist/ssr";
+import { ArrowLeft, Clock, Robot } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -9,6 +9,7 @@ import { RewriteSuggestions } from "@/components/evaluations/rewrite-suggestions
 import { getEvaluation } from "@/features/evaluations/service";
 import { localeCode, localize } from "@/i18n/config";
 import { getDictionary } from "@/i18n/server";
+import { webVisualEvaluationOutputSchema } from "@aurelis/evaluation";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,7 @@ export default async function EvaluationStatusPage({ params }: { params: Promise
   }).format(evaluation.createdAt);
   const technical = evaluation.technicalResult;
   const brand = evaluation.brandResult;
+  const visual = evaluation.visualResult ? webVisualEvaluationOutputSchema.parse({ aiAssessment: evaluation.visualResult.aiAssessment, dimensions: evaluation.visualResult.dimensionScores, recommendations: evaluation.visualResult.recommendations, summary: evaluation.visualResult.summary }) : null;
   const reviewerMetadata = brand?.reviewerOutput as { reliabilityComponents?: Record<string, number> } | null;
   const validatorMessages = ((technical?.validatorRaw as { messages?: { type?: string }[] } | null)?.messages ?? []);
   const validatorErrors = validatorMessages.filter((message) => message.type === "error" || message.type === "non-document-error").length;
@@ -50,7 +52,7 @@ export default async function EvaluationStatusPage({ params }: { params: Promise
 
       <EvaluationStatusPanel
         evaluationId={evaluation.id}
-        key={`${evaluation.status}:${Boolean(technical)}:${Boolean(brand)}`}
+        key={`${evaluation.status}:${Boolean(technical)}:${Boolean(visual)}:${Boolean(brand)}`}
         initialSnapshot={{
           evaluationStatus: evaluation.status,
           jobStatus: evaluation.job?.status ?? null,
@@ -59,15 +61,18 @@ export default async function EvaluationStatusPage({ params }: { params: Promise
           maxAttempts: evaluation.job?.maxAttempts ?? 0,
           hasTechnicalResult: Boolean(technical),
           hasBrandResult: Boolean(brand),
+          hasBrandTarget: Boolean(evaluation.brandProfileId),
+          hasVisualResult: Boolean(visual),
           failureCode: evaluation.failureCode,
           failureMessage: evaluation.failureMessage,
         }}
         locale={locale}
       />
 
-      {(evaluation.overallScore !== null || evaluation.technicalScore !== null || evaluation.brandScore !== null) && <section className="panel-flat mt-4 grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-4 md:p-6">{[
+      {(evaluation.overallScore !== null || evaluation.technicalScore !== null || evaluation.visualScore !== null || evaluation.brandScore !== null) && <section className="panel-flat mt-4 grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-5 md:p-6">{[
         [text({ en: "Overall", ja: "総合", zh: "综合" }), evaluation.overallScore],
         [text({ en: "Technical", ja: "技術", zh: "技术" }), evaluation.technicalScore],
+        [text({ en: "Visual", ja: "ビジュアル", zh: "视觉" }), evaluation.visualScore],
         [text({ en: "Brand", ja: "ブランド", zh: "品牌" }), evaluation.brandScore],
         [text({ en: "Reliability", ja: "信頼性", zh: "可信度" }), evaluation.reliabilityScore],
       ].map(([label, value]) => <div key={String(label)}><p className="text-[10px] text-[var(--text-tertiary)]">{label}</p><p className="mono-number mt-2 text-3xl">{typeof value === "number" ? value.toFixed(1) : dictionary.common.unavailable}</p></div>)}</section>}
@@ -102,6 +107,17 @@ export default async function EvaluationStatusPage({ params }: { params: Promise
           </p>
         </section>
       )}
+
+      {visual && (
+        <section className="panel-flat mt-4 p-5 md:p-6" aria-labelledby="visual-results">
+          <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="font-mono text-[10px] text-[var(--accent)]">DESKTOP + MOBILE</p><h2 className="mt-2 text-xl font-medium" id="visual-results">{text({ en: "Visual design results", ja: "ビジュアルデザイン評価", zh: "视觉设计评估结果" })}</h2></div><p className="mono-number text-4xl text-[var(--accent)]">{evaluation.visualScore?.toFixed(1)}<span className="text-sm text-[var(--text-tertiary)]"> / 100</span></p></div>
+          <p className="mt-4 text-sm leading-6 text-[var(--text-secondary)]">{visual.summary}</p>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">{visual.dimensions.map((item) => <article className="rounded-[var(--radius-control)] border border-white/[0.07] p-4" key={item.key}><p className="text-[10px] text-[var(--text-tertiary)]">{item.key}</p><p className="mono-number mt-3 text-2xl">{item.score}</p><p className="mt-3 text-xs leading-5 text-[var(--text-secondary)]">{item.observation}</p></article>)}</div>
+          <div className="mt-6 space-y-4">{visual.recommendations.map((item) => <article className="border-t border-white/[0.07] pt-4" key={item.title}><p className="font-mono text-[9px] text-[var(--accent)] uppercase">{item.priority}</p><h3 className="mt-2 text-sm font-medium">{item.title}</h3><p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{item.action}</p></article>)}</div>
+        </section>
+      )}
+
+      {visual?.aiAssessment.applies && <section className="panel-flat mt-4 p-5 md:p-6" aria-labelledby="web-ai-risk"><div className="flex items-center gap-3"><Robot aria-hidden="true" className="size-5 text-[var(--accent)]" /><div><p className="font-mono text-[9px] text-[var(--accent)]">AI-SPECIFIC REVIEW</p><h2 className="mt-1 text-xl font-medium" id="web-ai-risk">{text({ en: "AI traces and risk", ja: "AI痕跡とリスク", zh: "AI 痕迹与风险" })}</h2></div></div><p className="mt-4 text-sm leading-6 text-[var(--text-secondary)]">{visual.aiAssessment.summary}</p><dl className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{[["Genericness", visual.aiAssessment.genericness], ["Artifact risk", visual.aiAssessment.artifactRisk], ["Consistency risk", visual.aiAssessment.consistencyRisk], ["Refinement need", visual.aiAssessment.refinementNeed]].map(([label, value]) => <div key={label}><dt className="text-[10px] text-[var(--text-tertiary)]">{label}</dt><dd className="mono-number mt-2 text-2xl">{value}</dd></div>)}</dl></section>}
 
       {brand && (
         <section className="panel-flat mt-4 p-5 md:p-6" aria-labelledby="brand-results">

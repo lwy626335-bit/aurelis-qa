@@ -153,7 +153,7 @@ test.describe("AURELIS", () => {
 
   test("landing and dashboard have no serious or critical axe violations", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    for (const route of ["/", "/dashboard/demo", "/dashboard/evaluations/new", "/dashboard/technical", "/dashboard/brands", "/dashboard/brands/new", "/dashboard/history", "/dashboard/compare", "/dashboard/rubrics", "/dashboard/research", "/dashboard/analytics", "/dashboard/privacy", "/dashboard/github"]) {
+    for (const route of ["/", "/dashboard/demo", "/dashboard/evaluations/new", "/dashboard/logo", "/dashboard/technical", "/dashboard/brands", "/dashboard/brands/new", "/dashboard/history", "/dashboard/compare", "/dashboard/rubrics", "/dashboard/research", "/dashboard/analytics", "/dashboard/privacy", "/dashboard/github"]) {
       await page.goto(route);
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])

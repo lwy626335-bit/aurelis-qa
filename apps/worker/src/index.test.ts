@@ -5,10 +5,11 @@ import { inspectDocument } from "./technical.js";
 
 describe("worker capability contract", () => {
   it("marks Phase 3 tools ready without pretending the brand evaluator exists", () => {
-    expect(workerCapabilities).toHaveLength(4);
+    expect(workerCapabilities).toHaveLength(5);
     expect(workerCapabilities.slice(0, 3).map((capability) => capability.status)).toEqual(["ready", "ready", "ready"]);
     expect(workerCapabilities[3]?.status).toBe(process.env.OPENAI_API_KEY ? "ready" : "unavailable");
-    expect(workerCapabilities.map((capability) => capability.phase)).toEqual([3, 3, 3, 4]);
+    expect(workerCapabilities[4]?.status).toBe(process.env.OPENAI_API_KEY ? "ready" : "unavailable");
+    expect(workerCapabilities.map((capability) => capability.phase)).toEqual([3, 3, 3, 4, 4]);
   });
 
   it("finds deterministic HTML and SEO defects", () => {

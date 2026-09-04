@@ -100,17 +100,18 @@ model VerificationToken {
 }
 
 model Project {
-  id          String         @id @default(cuid())
-  ownerId     String?
-  name        String
-  description String?
-  owner       User?          @relation(fields: [ownerId], references: [id], onDelete: SetNull)
-  websites    Website[]
-  brands      BrandProfile[]
-  evaluations Evaluation[]
-  experiments Experiment[]
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id              String           @id @default(cuid())
+  ownerId         String?
+  name            String
+  description     String?
+  owner           User?            @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  websites        Website[]
+  brands          BrandProfile[]
+  evaluations     Evaluation[]
+  logoEvaluations LogoEvaluation[]
+  experiments     Experiment[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 }
 
 model Website {
@@ -211,7 +212,11 @@ model Evaluation {
   overallScore           Float?
   technicalScore         Float?
   brandScore             Float?
+  visualScore            Float?
   reliabilityScore       Float?
+  aiGenerated            Boolean              @default(false)
+  aiGenerator            String?
+  originalPrompt         String?
   evaluatorModel         String?
   evaluatorModelId       String?
   promptVersion          String?
@@ -229,6 +234,7 @@ model Evaluation {
   rubric                 Rubric               @relation(fields: [rubricId], references: [id])
   technicalResult        TechnicalResult?
   brandResult            BrandResult?
+  visualResult           WebVisualResult?
   evidence               EvaluationEvidence[]
   recommendations        Recommendation[]
   versions               EvaluationVersion[]
@@ -286,6 +292,44 @@ model BrandResult {
   insufficientEvidence Boolean    @default(false)
   evaluation           Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
   createdAt            DateTime   @default(now())
+}
+
+model WebVisualResult {
+  id              String     @id @default(cuid())
+  evaluationId    String     @unique
+  dimensionScores Json
+  summary         String
+  aiAssessment    Json
+  recommendations Json
+  modelId         String
+  promptVersion   String
+  evaluation      Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  createdAt       DateTime   @default(now())
+}
+
+model LogoEvaluation {
+  id              String   @id @default(cuid())
+  projectId       String
+  targetLabel     String
+  brandName       String
+  industry        String
+  brandKeywords   String[]
+  language        String   @default("en")
+  aiGenerated     Boolean  @default(false)
+  aiGenerator     String?
+  originalPrompt  String?
+  overallScore    Float
+  summary         String
+  dimensionScores Json
+  aiAssessment    Json
+  recommendations Json
+  modelId         String
+  promptVersion   String
+  inputHash       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+
+  @@index([projectId, createdAt])
 }
 
 model EvaluationEvidence {

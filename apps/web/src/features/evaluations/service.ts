@@ -10,11 +10,11 @@ import type { CreateEvaluationInput } from "./schema";
 const RUBRIC_VERSION = "standard-web-quality-v1.0";
 
 function hashInput(input: CreateEvaluationInput) {
-  const content =
+  const source =
     input.inputType === "URL"
       ? new URL(input.url).href
       : JSON.stringify({ html: input.html, css: input.css, javascript: input.javascript });
-  return createHash("sha256").update(content).digest("hex");
+  return createHash("sha256").update(JSON.stringify({ aiGenerated: input.aiGenerated, aiGenerator: input.aiGenerator, originalPrompt: input.originalPrompt, source })).digest("hex");
 }
 
 export async function createEvaluation(input: CreateEvaluationInput) {
@@ -46,6 +46,8 @@ export async function createEvaluation(input: CreateEvaluationInput) {
 
     return transaction.evaluation.create({
       data: {
+        aiGenerated: input.aiGenerated,
+        aiGenerator: input.aiGenerator,
         projectId: project.id,
         websiteId: website.id,
         brandProfileId: input.brandProfileId,
@@ -53,6 +55,7 @@ export async function createEvaluation(input: CreateEvaluationInput) {
         inputType: input.inputType,
         rubricVersion: rubric.version,
         inputHash,
+        originalPrompt: input.originalPrompt,
         job: { create: {} },
         versions: {
           create: {
@@ -78,7 +81,7 @@ export function listEvaluations() {
 export function getEvaluation(id: string) {
   return database.evaluation.findUnique({
     where: { id },
-    include: { brandResult: true, evidence: true, job: true, project: true, recommendations: true, technicalResult: true, website: true, versions: { orderBy: { createdAt: "desc" }, take: 1 } },
+    include: { brandResult: true, evidence: true, job: true, project: true, recommendations: true, technicalResult: true, visualResult: true, website: true, versions: { orderBy: { createdAt: "desc" }, take: 1 } },
   });
 }
 
@@ -87,11 +90,13 @@ export function getEvaluationStatus(id: string) {
     where: { id },
     select: {
       id: true,
+      brandProfileId: true,
       status: true,
       failureCode: true,
       failureMessage: true,
       technicalResult: { select: { id: true } },
       brandResult: { select: { id: true } },
+      visualResult: { select: { id: true } },
       job: {
         select: {
           status: true,

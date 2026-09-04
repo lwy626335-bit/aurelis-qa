@@ -2,7 +2,10 @@ import { validateEvaluationUrl } from "@aurelis/evaluation";
 import { z } from "zod";
 
 const sharedFields = {
+  aiGenerated: z.boolean().default(false),
+  aiGenerator: z.string().trim().max(100).nullable().default(null),
   brandProfileId: z.string().cuid().nullable().default(null),
+  originalPrompt: z.string().trim().max(4000).nullable().default(null),
   projectName: z.string().trim().min(2).max(100),
   targetLabel: z.string().trim().min(2).max(120),
   language: z.enum(["en", "ja", "zh"]),

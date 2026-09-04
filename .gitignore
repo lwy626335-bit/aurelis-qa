@@ -13,6 +13,7 @@ test-results/
 .env.*.local
 !.env.example
 *.log
+.tmp-cookies.txt
 *.tsbuildinfo
 generated/
 apps/web/src/generated/

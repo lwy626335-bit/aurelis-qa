@@ -28,18 +28,18 @@ The web application is the owner of final score calculation. Technical tools rem
 - Technical and brand results remain separate one-to-one records.
 - Evidence, recommendations, and evaluation versions are append-oriented audit records.
 - Experiment runs support later repeatability and variance research.
-- Auth.js-compatible user, account, session, and verification token tables are present, but authentication behavior is deferred to Phase 2.
+- Auth.js-compatible user, account, session, and verification token tables remain available for future multi-user identity. The current production boundary uses a site-wide Basic Auth credential before routing.
 
 ## Route policy
 
-- `/` is public.
-- `/dashboard` is a public, read-only demonstration in Phase 1.
+- In local development, `/` and the demo routes remain open for testability.
+- In production, Proxy and the API handlers require the configured site-wide Basic Auth credential.
 - `/dashboard/evaluations` and its child routes create and inspect real local research records.
-- Authentication and multi-user authorization remain outside the self-hosted research MVP boundary.
+- Multi-user identity and per-project authorization remain outside the self-hosted research MVP boundary.
 
 ## Worker boundary
 
-`apps/worker` currently exposes a typed capability manifest. Phase 2 persists queue jobs with lease, retry, stage, and cancellation fields. Phase 3 adds queue ownership, browser isolation, timeouts, redirect validation, DNS resolution checks, tool version capture, and bounded artifact retention.
+`apps/worker` is a persistent process with queue leases, retries, browser isolation, timeouts, redirect validation, DNS resolution checks, and tool-version capture. Its authenticated health endpoint verifies database reachability; production web routes refuse to create queue records when the worker is unavailable.
 
 ## Scoring contract
 

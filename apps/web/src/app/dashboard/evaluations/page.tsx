@@ -2,16 +2,12 @@ import {
   ArrowRight,
   CaretLeft,
   CaretRight,
-  CheckCircle,
-  Clock,
   Database,
   MagnifyingGlass,
-  WarningCircle,
-  XCircle,
 } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 
-import { InteractiveRow } from "@/components/ui/interactive-row";
+import { EvaluationSelectionList, type EvaluationSelectionLabels } from "@/components/evaluations/evaluation-selection-list";
 import { listEvaluations } from "@/features/evaluations/service";
 import { localeCode, localize, type Dictionary } from "@/i18n/config";
 import { getDictionary } from "@/i18n/server";
@@ -29,32 +25,6 @@ function statusLabel(status: string, copy: Dictionary["evaluations"]) {
   if (status === "FAILED") return copy.failed;
   if (status === "CANCELLED") return copy.cancelled;
   return status;
-}
-
-function StatusBadge({ status, copy }: { status: string; copy: Dictionary["evaluations"] }) {
-  const tone =
-    status === "COMPLETED"
-      ? "border-[rgba(112,214,165,0.2)] bg-[rgba(112,214,165,0.07)] text-[var(--success)]"
-      : status === "FAILED"
-        ? "border-[rgba(237,116,116,0.22)] bg-[rgba(237,116,116,0.07)] text-[var(--critical)]"
-        : status === "CANCELLED"
-          ? "border-white/[0.09] bg-white/[0.03] text-[var(--text-tertiary)]"
-          : "border-[rgba(232,196,107,0.2)] bg-[rgba(232,196,107,0.06)] text-[var(--warning)]";
-  const Icon =
-    status === "COMPLETED"
-      ? CheckCircle
-      : status === "FAILED"
-        ? WarningCircle
-        : status === "CANCELLED"
-          ? XCircle
-          : Clock;
-
-  return (
-    <span className={`inline-flex w-fit items-center gap-1.5 rounded-[6px] border px-2 py-1 font-mono text-[9px] ${tone}`}>
-      <Icon aria-hidden="true" className="size-3" weight={status === "COMPLETED" ? "fill" : "regular"} />
-      {statusLabel(status, copy)}
-    </span>
-  );
 }
 
 export default async function EvaluationsPage({
@@ -87,10 +57,49 @@ export default async function EvaluationsPage({
   const requestedPage = Number.parseInt(query.page ?? "1", 10);
   const page = Number.isFinite(requestedPage) ? Math.min(Math.max(requestedPage, 1), totalPages) : 1;
   const visibleEvaluations = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const dateFormatter = new Intl.DateTimeFormat(localeCode(locale), {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+  const selectionLabels: EvaluationSelectionLabels = {
+    cancelConfirm: text({ en: "Cancel tasks", ja: "タスクをキャンセル", zh: "取消任务" }),
+    cancelDescription: text({
+      en: "{cancellable} queued or running tasks will be cancelled. {skipped} items will be skipped.",
+      ja: "待機中または実行中の {cancellable} 件をキャンセルします。{skipped} 件はスキップされます。",
+      zh: "将取消 {cancellable} 个排队中或运行中的任务，跳过 {skipped} 个项目。",
+    }),
+    cancelFailed: text({
+      en: "No tasks were cancelled. {failed} failed and {skipped} were skipped.",
+      ja: "キャンセルできませんでした。{failed} 件が失敗し、{skipped} 件をスキップしました。",
+      zh: "没有任务取消成功；{failed} 个失败，{skipped} 个已跳过。",
+    }),
+    cancelPartial: text({
+      en: "Cancelled {success}; {failed} failed; {skipped} skipped.",
+      ja: "{success} 件をキャンセル、{failed} 件が失敗、{skipped} 件をスキップしました。",
+      zh: "已取消 {success} 个；{failed} 个失败；{skipped} 个已跳过。",
+    }),
+    cancelSelected: text({ en: "Cancel selected tasks", ja: "選択したタスクをキャンセル", zh: "取消选中任务" }),
+    cancelSuccess: text({
+      en: "Cancelled {success} tasks. {skipped} items were skipped.",
+      ja: "{success} 件をキャンセルしました。{skipped} 件をスキップしました。",
+      zh: "已取消 {success} 个任务，跳过 {skipped} 个项目。",
+    }),
+    cancelling: copy.cancelling,
+    clearSelection: text({ en: "Clear selection", ja: "選択を解除", zh: "清空选择" }),
+    closeDialog: text({ en: "Keep tasks", ja: "キャンセルしない", zh: "保留任务" }),
+    confirmTitle: text({ en: "Cancel selected tasks?", ja: "選択したタスクをキャンセルしますか？", zh: "取消选中的任务？" }),
+    created: copy.created,
+    inputType: copy.inputType,
+    listLabel: dictionary.dashboard.recentTable,
+    open: dictionary.dashboard.open,
+    selectAll: text({ en: "Select current page", ja: "このページをすべて選択", zh: "全选当前页" }),
+    selectItem: text({ en: "Select {label}", ja: "{label} を選択", zh: "选择 {label}" }),
+    selected: text({ en: "{count} selected", ja: "{count} 件選択", zh: "已选择 {count} 项" }),
+    selectionSummary: text({
+      en: "{cancellable} cancellable · {skipped} skipped",
+      ja: "キャンセル可能 {cancellable} 件 · スキップ {skipped} 件",
+      zh: "可取消 {cancellable} 项 · 将跳过 {skipped} 项",
+    }),
+    status: dictionary.dashboard.status,
+    statusLabels: Object.fromEntries(statuses.filter((status) => status !== "ALL").map((status) => [status, statusLabel(status, copy)])),
+    target: dictionary.dashboard.target,
+  };
 
   function pageHref(pageNumber: number) {
     const params = new URLSearchParams();
@@ -159,50 +168,19 @@ export default async function EvaluationsPage({
             <p>{text({ en: `Page ${page} of ${totalPages}`, ja: `${page} / ${totalPages} ページ`, zh: `第 ${page} 页，共 ${totalPages} 页` })}</p>
           </div>
 
-          <div className="panel-flat mt-3 divide-y divide-white/[0.06] md:hidden">
-            {visibleEvaluations.map((evaluation) => (
-              <InteractiveRow className="grid grid-cols-[1fr_auto] gap-3 rounded-none p-4" href={`/dashboard/evaluations/${evaluation.id}`} key={evaluation.id}>
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{evaluation.website.label}</p>
-                  <p className="mt-1 truncate text-[11px] text-[var(--text-tertiary)]">{evaluation.project.name} · {evaluation.inputType}</p>
-                  <div className="mt-3"><StatusBadge copy={copy} status={evaluation.status} /></div>
-                </div>
-                <div className="flex flex-col items-end justify-between gap-4">
-                  <span className="text-[10px] text-[var(--text-tertiary)]">{dateFormatter.format(evaluation.createdAt)}</span>
-                  <CaretRight aria-hidden="true" className="size-4 text-[var(--text-tertiary)]" />
-                </div>
-              </InteractiveRow>
-            ))}
-          </div>
-
-          <div className="panel-flat mt-3 hidden overflow-hidden md:block" aria-label={dictionary.dashboard.recentTable}>
-            <div aria-hidden="true" className="grid grid-cols-[minmax(0,1.5fr)_0.75fr_0.9fr_1fr_auto] border-b border-white/[0.07] px-5 py-3 text-[10px] text-[var(--text-tertiary)]">
-              <span>{dictionary.dashboard.target}</span>
-              <span>{copy.inputType}</span>
-              <span>{dictionary.dashboard.status}</span>
-              <span>{copy.created}</span>
-              <span />
-            </div>
-            <div className="divide-y divide-white/[0.055]">
-              {visibleEvaluations.map((evaluation) => (
-                <InteractiveRow
-                  aria-label={`${dictionary.dashboard.open}: ${evaluation.website.label}`}
-                  className="group grid grid-cols-[minmax(0,1.5fr)_0.75fr_0.9fr_1fr_auto] items-center rounded-none px-5 py-4 text-sm"
-                  href={`/dashboard/evaluations/${evaluation.id}`}
-                  key={evaluation.id}
-                >
-                  <span className="min-w-0 font-medium">
-                    <span className="block truncate">{evaluation.website.label}</span>
-                    <span className="mt-1 block truncate text-[10px] font-normal text-[var(--text-tertiary)]">{evaluation.project.name}</span>
-                  </span>
-                  <span className="font-mono text-xs text-[var(--text-secondary)]">{evaluation.inputType}</span>
-                  <StatusBadge copy={copy} status={evaluation.status} />
-                  <span className="text-xs text-[var(--text-tertiary)]">{dateFormatter.format(evaluation.createdAt)}</span>
-                  <CaretRight aria-hidden="true" className="size-4 text-[var(--text-tertiary)] transition-transform group-hover:translate-x-0.5 group-hover:text-[var(--accent)]" />
-                </InteractiveRow>
-              ))}
-            </div>
-          </div>
+          <EvaluationSelectionList
+            dateLocale={localeCode(locale)}
+            evaluations={visibleEvaluations.map((evaluation) => ({
+              createdAt: evaluation.createdAt.toISOString(),
+              id: evaluation.id,
+              inputType: evaluation.inputType,
+              projectName: evaluation.project.name,
+              status: evaluation.status,
+              websiteLabel: evaluation.website.label,
+            }))}
+            key={`${page}:${search}:${selectedStatus}`}
+            labels={selectionLabels}
+          />
 
           {totalPages > 1 && (
             <nav aria-label={text({ en: "Evaluation pages", ja: "評価ページ", zh: "评估分页" })} className="mt-5 flex justify-end gap-2">

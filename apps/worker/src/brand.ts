@@ -3,8 +3,10 @@ import { brandEvaluationOutputSchema, brandEvaluationStructuredSchema, calculate
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 
-const MODEL_ID = process.env.OPENAI_EVALUATION_MODEL ?? "gpt-5.6-sol";
-const MODEL_DISPLAY_NAME = process.env.OPENAI_EVALUATION_MODEL_DISPLAY_NAME ?? "GPT-5.6 Sol";
+import { websiteOverallScore } from "./overall.js";
+
+const MODEL_ID = process.env.OPENAI_EVALUATION_MODEL || "gpt-5.6-luna";
+const MODEL_DISPLAY_NAME = process.env.OPENAI_EVALUATION_MODEL_DISPLAY_NAME || "GPT-5.6 Luna";
 const PROMPT_VERSION = "brand-evaluator-v1.0";
 const dimensions = [
   ["tone-consistency", 20], ["vocabulary-alignment", 15], ["brand-personality", 20],
@@ -86,7 +88,7 @@ export async function runBrandEvaluation(evaluationId: string) {
   const reviewer = verifyOutput(await callStage(client, reviewerInput, "reviewer"), sources);
   const brandScore = Math.round(reviewer.dimensions.reduce((total, item) => total + item.score, 0) * 10) / 10;
   const insufficient = reviewer.dimensions.some((item) => item.insufficientEvidence);
-  const overallScore = evaluation.technicalScore === null ? null : Math.round((evaluation.technicalScore * 0.6 + brandScore * 0.4) * 10) / 10;
+  const overallScore = websiteOverallScore({ brand: brandScore, technical: evaluation.technicalScore, visual: evaluation.visualScore });
   const evidenceItems = reviewer.dimensions.flatMap((item) => item.evidence);
   const strengthValue = { insufficient: 0, moderate: 70, strong: 100, weak: 40 } as const;
   const reliabilityComponents = {
@@ -103,7 +105,7 @@ export async function runBrandEvaluation(evaluationId: string) {
     await transaction.brandResult.upsert({ where: { evaluationId }, create: { dimensionScores: reviewer.dimensions.map(({ dimensionKey, maxScore, score }) => ({ dimensionKey, maxScore, score })), evaluatorOutput: evaluator, evaluationId, insufficientEvidence: insufficient, reviewerOutput: { reliabilityComponents, result: reviewer } }, update: { dimensionScores: reviewer.dimensions.map(({ dimensionKey, maxScore, score }) => ({ dimensionKey, maxScore, score })), evaluatorOutput: evaluator, insufficientEvidence: insufficient, reviewerOutput: { reliabilityComponents, result: reviewer } } });
     await transaction.evaluationEvidence.createMany({ data: reviewer.dimensions.flatMap((item) => item.evidence.map((evidence) => ({ dimensionKey: `brand:${item.dimensionKey}`, evaluationId, excerpt: evidence.excerpt, maxScore: item.maxScore, observation: item.observation, reason: item.reason, score: item.score, strength: evidence.strength.toUpperCase() as "STRONG" | "MODERATE" | "WEAK" | "INSUFFICIENT" }))) });
     await transaction.recommendation.createMany({ data: reviewer.dimensions.filter((item) => item.recommendation.trim()).map((item) => ({ description: item.reason, dimensionKey: `brand:${item.dimensionKey}`, evaluationId, severity: "MEDIUM", suggestedFix: item.recommendation, title: item.observation.slice(0, 120) })) });
-    await transaction.evaluation.update({ where: { id: evaluationId }, data: { brandScore, completedAt: new Date(), evaluatorModel: MODEL_DISPLAY_NAME, evaluatorModelId: MODEL_ID, failureCode: null, failureMessage: null, overallScore, promptVersion: PROMPT_VERSION, referenceCorpusVersion: brand.corpusVersion, reliabilityScore, status: overallScore === null ? "PARTIAL" : "COMPLETED" } });
+    await transaction.evaluation.update({ where: { id: evaluationId }, data: { brandScore, completedAt: new Date(), evaluatorModel: MODEL_DISPLAY_NAME, evaluatorModelId: MODEL_ID, failureCode: evaluation.failureCode === "AI_VISUAL_UNAVAILABLE" ? evaluation.failureCode : null, failureMessage: evaluation.failureCode === "AI_VISUAL_UNAVAILABLE" ? evaluation.failureMessage : null, overallScore, promptVersion: PROMPT_VERSION, referenceCorpusVersion: brand.corpusVersion, reliabilityScore, status: overallScore === null || evaluation.visualScore === null ? "PARTIAL" : "COMPLETED" } });
     await transaction.evaluationVersion.updateMany({ where: { evaluationId }, data: { evaluatorModelId: MODEL_ID, promptVersion: PROMPT_VERSION, referenceCorpusVersion: brand.corpusVersion } });
   });
   return brandScore;

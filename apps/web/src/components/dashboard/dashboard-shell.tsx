@@ -10,6 +10,7 @@ import {
   Flask,
   Gauge,
   GithubLogo,
+  ImageSquare,
   List,
   ShieldCheck,
   SlidersHorizontal,
@@ -30,6 +31,7 @@ import { cn } from "@/lib/utils";
 const navigation = [
   { key: "overview", href: "/dashboard/demo", icon: Gauge },
   { key: "evaluations", href: "/dashboard/evaluations", icon: ChartLineUp },
+  { key: "logo", href: "/dashboard/logo", icon: ImageSquare },
   { key: "analytics", href: "/dashboard/analytics", icon: ChartBar },
   { key: "brands", href: "/dashboard/brands", icon: Sparkle },
   { key: "history", href: "/dashboard/history", icon: ClockCounterClockwise },

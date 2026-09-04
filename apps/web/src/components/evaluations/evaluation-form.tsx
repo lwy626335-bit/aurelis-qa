@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Code, Globe } from "@phosphor-icons/react";
+import { ArrowRight, Code, Globe, Sparkle } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -12,6 +12,7 @@ export function EvaluationForm({ brands, dictionary, locale }: { brands: { id: s
   const copy = dictionary.evaluations;
   const text = <T,>(values: { en: T; ja: T; zh: T }) => localize(locale, values);
   const router = useRouter();
+  const [aiGenerated, setAiGenerated] = useState(false);
   const [inputType, setInputType] = useState<"URL" | "HTML">("URL");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -22,10 +23,13 @@ export function EvaluationForm({ brands, dictionary, locale }: { brands: { id: s
 
     const payload = {
       inputType,
+      aiGenerated,
+      aiGenerator: formData.get("aiGenerator") || null,
       brandProfileId: formData.get("brandProfileId") || null,
       projectName: formData.get("projectName"),
       targetLabel: formData.get("targetLabel"),
       language: formData.get("language"),
+      originalPrompt: formData.get("originalPrompt") || null,
       ...(inputType === "URL"
         ? { url: formData.get("url") }
         : {
@@ -118,6 +122,25 @@ export function EvaluationForm({ brands, dictionary, locale }: { brands: { id: s
           {text({ en: "Uses the selected reference data as evidence for brand evaluation.", ja: "選択した参照データをブランド評価の根拠として使用します。", zh: "使用所选参考语料作为品牌评估证据。" })}
         </span>
       </label>
+
+      <label className="flex min-h-12 items-center gap-3 rounded-[var(--radius-control)] border border-white/10 bg-white/[0.025] px-4 text-sm">
+        <input checked={aiGenerated} className="size-4 accent-[var(--accent)]" onChange={(event) => setAiGenerated(event.target.checked)} type="checkbox" />
+        <Sparkle aria-hidden="true" className="size-4 text-[var(--accent)]" />
+        {text({ en: "This website was generated with AI", ja: "このWebサイトはAIで生成されました", zh: "这个网页由 AI 生成" })}
+      </label>
+
+      {aiGenerated && (
+        <div className="grid gap-5 sm:grid-cols-2">
+          <label className="text-xs text-[var(--text-secondary)]">
+            {text({ en: "AI tool (optional)", ja: "AIツール（任意）", zh: "AI 工具（可选）" })}
+            <input className="field mt-2" maxLength={100} name="aiGenerator" />
+          </label>
+          <label className="text-xs text-[var(--text-secondary)] sm:col-span-2">
+            {text({ en: "Original prompt (optional)", ja: "元のプロンプト（任意）", zh: "原始提示词（可选）" })}
+            <textarea className="field mt-2 min-h-24 resize-y" maxLength={4000} name="originalPrompt" />
+          </label>
+        </div>
+      )}
 
       {inputType === "URL" ? (
         <label className="block text-xs text-[var(--text-secondary)]">

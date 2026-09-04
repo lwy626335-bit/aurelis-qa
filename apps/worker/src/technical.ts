@@ -1,6 +1,4 @@
 import { createServer } from "node:http";
-import { resolve } from "node:path";
-import { mkdir } from "node:fs/promises";
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 
@@ -26,12 +24,12 @@ function isPrivateAddress(address: string) {
   return normalized === "::" || normalized === "::1" || normalized.startsWith("fc") || normalized.startsWith("fd") || /^fe[89ab]/.test(normalized);
 }
 
-async function assertPublicHost(url: URL) {
+export async function assertPublicHost(url: URL) {
   const addresses = await lookup(url.hostname, { all: true, verbatim: true });
   if (addresses.length === 0 || addresses.some(({ address }) => isPrivateAddress(address))) throw new Error("PRIVATE_ADDRESS_RESOLVED");
 }
 
-async function fetchPublicHtml(value: string) {
+export async function fetchPublicHtml(value: string) {
   let current = value;
   for (let redirects = 0; redirects <= 5; redirects += 1) {
     const validation = validateEvaluationUrl(current);
@@ -93,12 +91,14 @@ export function inspectDocument(html: string) {
   return { checks, seoScore };
 }
 
-async function serveSnapshot(html: string) {
+export async function serveSnapshot(html: string, css = "") {
   const safeHtml = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
+  const style = css ? `<style>${css.replace(/<\/style/gi, "<\\/style")}</style>` : "";
+  const document = safeHtml.includes("</head>") ? safeHtml.replace("</head>", `${style}</head>`) : `${style}${safeHtml}`;
   const server = createServer((_request, response) => {
     response.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; img-src data:");
     response.setHeader("Content-Type", "text/html; charset=utf-8");
-    response.end(safeHtml);
+    response.end(document);
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   const address = server.address();
@@ -126,12 +126,9 @@ async function browserAudits(url: string) {
     const page = await context.newPage();
     await page.goto(url, { waitUntil: "load", timeout: 30_000 });
     const accessibility = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
-    const userDataDir = resolve(process.cwd(), ".lighthouse-profile");
-    await mkdir(userDataDir, { recursive: true });
     const chrome = await chromeLauncher.launch({
       chromePath: executablePath,
       chromeFlags: ["--headless", "--no-sandbox", "--disable-gpu"],
-      userDataDir,
     });
     try {
       const result = await lighthouse(url, { logLevel: "error", onlyCategories: ["performance", "accessibility", "seo", "best-practices"], output: "json", port: chrome.port });
@@ -164,7 +161,7 @@ export async function runTechnicalEvaluation(job: ClaimedJob) {
   if (!html) throw new Error("HTML_INPUT_MISSING");
 
   await database.evaluation.update({ where: { id: evaluation.id }, data: { failureCode: null, failureMessage: null, startedAt: new Date(), status: "RUNNING" } });
-  const snapshot = await serveSnapshot(html);
+  const snapshot = await serveSnapshot(html, evaluation.website.cssContent ?? "");
   try {
     const [validator, audits] = await Promise.all([validateHtml(html), browserAudits(snapshot.url)]);
     const deterministic = inspectDocument(html);
@@ -200,7 +197,7 @@ export async function runTechnicalEvaluation(job: ClaimedJob) {
         create: { evaluationId: evaluation.id, performanceScore: urlSnapshot ? null : performance, accessibilityScore: accessibility, seoScore: seo, bestPracticesScore: bestPractices, htmlQualityScore: htmlQuality, responsiveScore: deterministic.checks.hasViewport ? 100 : 50, codeQualityScore: 100, labMetrics: urlSnapshot ? undefined : labMetrics, lighthouseRaw: audits.lighthouse as never, validatorRaw: validator as never, accessibilityRaw: audits.accessibility as never, deterministicChecks: deterministic as never },
         update: { performanceScore: urlSnapshot ? null : performance, accessibilityScore: accessibility, seoScore: seo, bestPracticesScore: bestPractices, htmlQualityScore: htmlQuality, responsiveScore: deterministic.checks.hasViewport ? 100 : 50, codeQualityScore: 100, labMetrics: urlSnapshot ? undefined : labMetrics, lighthouseRaw: audits.lighthouse as never, validatorRaw: validator as never, accessibilityRaw: audits.accessibility as never, deterministicChecks: deterministic as never },
       }),
-      database.evaluation.update({ where: { id: evaluation.id }, data: { completedAt: new Date(), failureCode: urlSnapshot ? "LIVE_PERFORMANCE_UNAVAILABLE" : null, failureMessage: urlSnapshot ? "Remote HTML was fetched with redirect and DNS checks; embedded resources were not executed, so live performance was not scored." : null, technicalScore, technicalToolVersions: { axe: audits.accessibility.testEngine.version, lighthouse: audits.lighthouse.lighthouseVersion, parse5: "8.0.0", scope: urlSnapshot ? "secured-static-snapshot" : "pasted-html-snapshot", validator: "Nu HTML Checker container" }, status: "PARTIAL" } }),
+      database.evaluation.update({ where: { id: evaluation.id }, data: { failureCode: urlSnapshot ? "LIVE_PERFORMANCE_UNAVAILABLE" : null, failureMessage: urlSnapshot ? "Remote HTML was fetched with redirect and DNS checks; embedded resources were not executed, so live performance was not scored." : null, technicalScore, technicalToolVersions: { axe: audits.accessibility.testEngine.version, lighthouse: audits.lighthouse.lighthouseVersion, parse5: "8.0.0", scope: urlSnapshot ? "secured-static-snapshot" : "pasted-html-snapshot", validator: "Nu HTML Checker container" }, status: "RUNNING" } }),
     ]);
     return technicalScore;
   } finally {

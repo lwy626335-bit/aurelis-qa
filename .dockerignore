@@ -1,0 +1,15 @@
+.git
+.github
+.next
+.pnpm-store
+.tmp-*
+.vercel
+**/.env
+**/.env.*
+!.env.example
+**/.next
+**/dist
+**/generated
+**/node_modules
+test-results
+

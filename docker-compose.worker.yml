@@ -1,0 +1,25 @@
+services:
+  validator:
+    image: ghcr.io/validator/validator:latest
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    init: true
+    restart: unless-stopped
+    depends_on:
+      - validator
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_EVALUATION_MODEL: ${OPENAI_EVALUATION_MODEL:-gpt-5.6-luna}
+      OPENAI_VISION_EVALUATION_MODEL: ${OPENAI_VISION_EVALUATION_MODEL:-gpt-5.6-luna}
+      PORT: "8080"
+      VNU_URL: http://validator:8888
+      WORKER_HEALTH_TOKEN: ${WORKER_HEALTH_TOKEN:?WORKER_HEALTH_TOKEN is required}
+    ports:
+      - "127.0.0.1:8080:8080"
+    shm_size: 1gb
+

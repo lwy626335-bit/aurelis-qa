@@ -93,6 +93,7 @@ export const dictionaries = {
       nav: {
         overview: "Overview",
         evaluations: "Evaluations",
+        logo: "Logo review",
         analytics: "Analytics",
         brands: "Brand profiles",
         history: "History",
@@ -285,6 +286,7 @@ export const dictionaries = {
       nav: {
         overview: "概要",
         evaluations: "評価",
+        logo: "ロゴ評価",
         analytics: "分析",
         brands: "ブランド資料",
         history: "履歴",
@@ -474,6 +476,7 @@ export const dictionaries = {
       nav: {
         overview: "概览",
         evaluations: "评估",
+        logo: "Logo 评价",
         analytics: "分析",
         brands: "品牌资料",
         history: "历史记录",

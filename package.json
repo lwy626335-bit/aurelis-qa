@@ -7,7 +7,7 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "dev": "pnpm --parallel --filter @aurelis/web --filter @aurelis/worker dev",
+    "dev": "pnpm --parallel --no-bail --filter @aurelis/web --filter @aurelis/worker dev",
     "dev:web": "pnpm --filter @aurelis/web dev",
     "dev:worker": "pnpm --filter @aurelis/worker dev",
     "build": "pnpm -r --if-present build",
@@ -17,6 +17,7 @@
     "test:e2e": "pnpm --filter @aurelis/web test:e2e",
     "db:generate": "pnpm --filter @aurelis/database db:generate",
     "db:migrate": "pnpm --filter @aurelis/database db:migrate",
+    "db:migrate:deploy": "pnpm --filter @aurelis/database db:migrate:deploy",
     "db:seed": "pnpm --filter @aurelis/database db:seed"
   }
 }

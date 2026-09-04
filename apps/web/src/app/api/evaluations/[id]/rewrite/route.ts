@@ -1,14 +1,17 @@
 import { getEvaluation } from "@/features/evaluations/service";
+import { authorizeRequest } from "@/lib/access-control";
 
 type Context = { params: Promise<{ id: string }> };
 
-export async function POST(_request: Request, context: Context) {
+export async function POST(request: Request, context: Context) {
+  const unauthorized = authorizeRequest(request);
+  if (unauthorized) return unauthorized;
   if (!process.env.OPENAI_API_KEY) return Response.json({ code: "AI_REWRITE_UNAVAILABLE" }, { status: 503 });
   const { id } = await context.params;
   const evaluation = await getEvaluation(id).catch(() => null);
   if (!evaluation) return Response.json({ code: "NOT_FOUND" }, { status: 404 });
   if (!evaluation.website.htmlContent || evaluation.recommendations.length === 0) return Response.json({ code: "NO_REWRITE_INPUT" }, { status: 409 });
-  const model = process.env.OPENAI_EVALUATION_MODEL ?? "gpt-5.6-sol";
+  const model = process.env.OPENAI_EVALUATION_MODEL || "gpt-5.6-luna";
   const schema = {
     additionalProperties: false,
     properties: {

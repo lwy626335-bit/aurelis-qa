@@ -25,7 +25,7 @@ pnpm dev
 Open `http://localhost:3000` for the landing page and `http://localhost:3000/dashboard` for the demo dashboard.
 The `pnpm dev` command starts both the web server and evaluation worker. Use `pnpm dev:web` when only the interface is needed.
 
-The GitHub repository stores source code; it is not a hosted application URL. GitHub Pages is not configured because AURELIS requires server routes, PostgreSQL, a long-running worker, and browser-based audit tooling. Use the local URL above or deploy to an authenticated full-stack environment before exposing it to the internet.
+The GitHub repository stores source code; it is not a hosted application URL. GitHub Pages is not configured because AURELIS requires server routes, PostgreSQL, a long-running worker, and browser-based audit tooling. For Vercel, deploy the web application there and run `apps/worker` on a persistent service; follow the [Vercel deployment guide](docs/vercel-deployment.md).
 
 ## Workspace
 
@@ -67,6 +67,8 @@ Implemented through Phase 7:
 - Local PostgreSQL and Nu HTML Checker services
 - Atomic job leasing and technical result persistence
 - Lighthouse lab, axe, Nu HTML Checker, and deterministic DOM/SEO analysis
+- Desktop/mobile visual design evaluation with deterministic application-owned weighting
+- Standalone Logo evaluation with five dimensions, multilingual output, provenance-aware AI risk, and history deletion
 - Brand profile, examples, and reference corpus management
 - OpenAI Responses API evaluator/reviewer adapter with deterministic evidence anchoring
 - Application-owned overall and reliability calculation
@@ -75,6 +77,8 @@ Implemented through Phase 7:
 - Research experiments with deterministic mean, standard deviation, and variance
 - Server-side PDF reports, descriptive analytics, privacy disclosure, and cascade deletion
 - Public-project GitHub composite Action with non-blocking workflow defaults
+- Fail-closed production Basic authentication and same-origin mutation enforcement
+- Authenticated worker health gating before queue records are created
 
 Not implemented:
 
@@ -82,6 +86,6 @@ Deferred boundaries:
 
 - Private-repository GitHub App and status-check writeback
 - Live remote-resource performance until independently verifiable worker network isolation is deployed
-- Authentication and multi-tenant authorization for internet-facing deployment
+- Multi-tenant accounts and per-project authorization; production currently uses one site-wide Basic Auth credential
 
 See [architecture](docs/architecture.md), [design system](docs/design-system.md), [security](docs/security.md), and the [Phase 7 verification record](docs/phase-7-verification.md).

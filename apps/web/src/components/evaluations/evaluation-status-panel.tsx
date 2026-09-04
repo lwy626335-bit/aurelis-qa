@@ -19,6 +19,8 @@ export type EvaluationStatusSnapshot = {
   maxAttempts: number;
   hasTechnicalResult: boolean;
   hasBrandResult: boolean;
+  hasBrandTarget: boolean;
+  hasVisualResult: boolean;
   failureCode: string | null;
   failureMessage: string | null;
 };
@@ -31,7 +33,7 @@ const terminalStatuses = new Set<EvaluationStatusSnapshot["evaluationStatus"]>([
 ]);
 
 function resultSignature(snapshot: EvaluationStatusSnapshot) {
-  return `${snapshot.evaluationStatus}:${snapshot.hasTechnicalResult}:${snapshot.hasBrandResult}`;
+  return `${snapshot.evaluationStatus}:${snapshot.hasTechnicalResult}:${snapshot.hasVisualResult}:${snapshot.hasBrandResult}`;
 }
 
 export function EvaluationStatusPanel({
@@ -114,7 +116,7 @@ export function EvaluationStatusPanel({
       );
     },
     {
-      dependencies: [snapshot.evaluationStatus, snapshot.hasTechnicalResult, snapshot.hasBrandResult],
+      dependencies: [snapshot.evaluationStatus, snapshot.hasTechnicalResult, snapshot.hasVisualResult, snapshot.hasBrandResult],
       revertOnUpdate: true,
       scope: root,
     },
@@ -137,9 +139,18 @@ export function EvaluationStatusPanel({
         : text({ en: "Technical evaluation", ja: "技術評価", zh: "技术评估" }),
     },
     {
-      complete: snapshot.hasBrandResult,
-      active: running && snapshot.hasTechnicalResult && !snapshot.hasBrandResult,
-      label: snapshot.hasBrandResult
+      complete: snapshot.hasVisualResult,
+      active: running && snapshot.hasTechnicalResult && !snapshot.hasVisualResult,
+      label: snapshot.hasVisualResult
+        ? text({ en: "Visual evaluation complete", ja: "ビジュアル評価を完了", zh: "视觉评估已完成" })
+        : text({ en: "Visual evaluation", ja: "ビジュアル評価", zh: "视觉评估" }),
+    },
+    {
+      complete: !snapshot.hasBrandTarget || snapshot.hasBrandResult,
+      active: running && snapshot.hasVisualResult && snapshot.hasBrandTarget && !snapshot.hasBrandResult,
+      label: !snapshot.hasBrandTarget
+        ? text({ en: "Brand evaluation not requested", ja: "ブランド評価は未指定", zh: "未请求品牌评估" })
+        : snapshot.hasBrandResult
         ? text({ en: "Brand evaluation complete", ja: "ブランド評価を完了", zh: "品牌评估已完成" })
         : text({ en: "Brand evaluation", ja: "ブランド評価", zh: "品牌评估" }),
     },
@@ -165,7 +176,7 @@ export function EvaluationStatusPanel({
         )}
       </div>
 
-      <div className="mt-4 grid gap-4 md:grid-cols-3">
+      <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {stages.map((stage) => (
           <article className="panel-flat min-h-36 p-5" data-status-card key={stage.label}>
             {stage.complete ? (
