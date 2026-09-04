@@ -1,6 +1,8 @@
-# Vercel deployment
+# Production deployment
 
-AURELIS uses two runtimes. Vercel hosts `apps/web`; a separate persistent service runs `apps/worker`, Chromium, Lighthouse, and the Nu HTML Checker. The web deployment deliberately refuses to create queued work until that worker's authenticated health endpoint is ready.
+AURELIS uses two runtimes. A web service hosts `apps/web`; a separate persistent service runs `apps/worker`, Chromium, Lighthouse, and the Nu HTML Checker. The web deployment deliberately refuses to create queued work until that worker's authenticated health endpoint is ready.
+
+The preferred Railway topology keeps PostgreSQL private by hosting both application runtimes in the same Railway project. Vercel cannot reach Railway private networking, so retaining Vercel for the dynamic web runtime would require either a public database endpoint or a separate public application API.
 
 ## Vercel web environment
 
@@ -44,11 +46,12 @@ Configure:
 
 ## Railway topology
 
-Use one Railway project in a region close to the Vercel deployment, with these three services:
+Use one Railway project with these four services:
 
-1. A Railway PostgreSQL database. Keep its private `DATABASE_URL` for the worker and use its public connection URL only for Vercel.
+1. A Railway PostgreSQL database with Public Access disabled.
 2. A Docker Image service named `validator` using `ghcr.io/validator/validator:latest`. It does not need a public domain.
-3. A GitHub service named `worker` using this repository and `Dockerfile.worker`. Set `RAILWAY_DOCKERFILE_PATH=Dockerfile.worker`, generate a public domain, and leave Railway's unauthenticated HTTP health-check path unset because `/health` requires a bearer token.
+3. A GitHub service named `worker` using this repository and `Dockerfile.worker`. Set `RAILWAY_DOCKERFILE_PATH=Dockerfile.worker`; it does not need a public domain.
+4. A GitHub service named `web` using this repository and `Dockerfile.web`. Only this service requires a public domain.
 
 Set these worker variables in Railway:
 
@@ -61,9 +64,23 @@ RAILWAY_DOCKERFILE_PATH=Dockerfile.worker
 RAILWAY_SHM_SIZE_BYTES=1073741824
 ```
 
-The exact PostgreSQL service name controls the `${{Postgres.DATABASE_URL}}` reference. If Railway names it differently, use the reference-variable picker rather than copying credentials. `RAILWAY_SHM_SIZE_BYTES` gives Chromium a 1 GiB shared-memory area.
+Set these web variables in Railway:
 
-After deployment, use `https://<worker-domain>/health` as Vercel's `WORKER_HEALTH_URL`. Configure the same `WORKER_HEALTH_TOKEN` in both services, run `pnpm db:migrate:deploy` once against the Railway database, and then redeploy the Vercel production deployment.
+```text
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+APP_URL=https://<web-domain>
+APP_ACCESS_USERNAME=aurelis
+APP_ACCESS_PASSWORD=<random password>
+WORKER_HEALTH_URL=http://worker.railway.internal:8080
+WORKER_HEALTH_TOKEN=<shared random secret>
+OPENAI_API_KEY=<rotated key>
+RAILWAY_DOCKERFILE_PATH=Dockerfile.web
+RAILWAY_SHM_SIZE_BYTES=1073741824
+```
+
+The exact service names control the `${{Postgres.DATABASE_URL}}` reference and the `worker.railway.internal` hostname. If Railway names either service differently, use Railway's reference-variable picker and private-network DNS name. `RAILWAY_SHM_SIZE_BYTES` gives Chromium a 1 GiB shared-memory area. `Dockerfile.web` runs pending Prisma migrations before starting Next.js.
+
+After deployment, configure the same `WORKER_HEALTH_TOKEN` in both application services. The web service checks the worker over Railway's private network; PostgreSQL and the validator remain private.
 
 ## Access verification
 

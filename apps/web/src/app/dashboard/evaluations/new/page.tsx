@@ -4,6 +4,8 @@ import { EvaluationForm } from "@/components/evaluations/evaluation-form";
 import { listBrands } from "@/features/brands/service";
 import { getDictionary } from "@/i18n/server";
 
+export const dynamic = "force-dynamic";
+
 export default async function NewEvaluationPage() {
   const { dictionary, locale } = await getDictionary();
   const copy = dictionary.evaluations;

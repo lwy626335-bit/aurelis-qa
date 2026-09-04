@@ -1,0 +1,31 @@
+FROM mcr.microsoft.com/playwright:v1.62.1-noble
+
+ENV CI=true \
+    NODE_ENV=production \
+    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
+    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+
+WORKDIR /app
+
+RUN corepack enable && corepack prepare pnpm@11.19.0 --activate
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/web/package.json apps/web/package.json
+COPY packages/database/package.json packages/database/package.json
+COPY packages/evaluation/package.json packages/evaluation/package.json
+
+RUN pnpm install --frozen-lockfile --filter @aurelis/web... --prod=false
+
+COPY apps/web apps/web
+COPY packages/database packages/database
+COPY packages/evaluation packages/evaluation
+
+RUN pnpm --filter @aurelis/database db:generate \
+    && DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build pnpm --filter @aurelis/web build \
+    && chown -R pwuser:pwuser /app/apps/web/.next
+
+USER pwuser
+
+EXPOSE 3000
+
+CMD ["sh", "-c", "pnpm db:migrate:deploy && pnpm --filter @aurelis/web start"]
