@@ -18,6 +18,21 @@ describe("authorizeRequest", () => {
     expect(authorizeRequest(request())).toBeNull();
   });
 
+  it("allows anonymous access when public access is enabled", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("APP_PUBLIC_ACCESS", "true");
+    expect(authorizeRequest(request())).toBeNull();
+  });
+
+  it("rejects cross-origin mutations when public access is enabled", () => {
+    vi.stubEnv("APP_PUBLIC_ACCESS", "true");
+    const response = authorizeRequest(request("/api/evaluations", {
+      method: "POST",
+      headers: { origin: "https://attacker.example" },
+    }));
+    expect(response?.status).toBe(403);
+  });
+
   it("fails closed in production when the password is missing", async () => {
     vi.stubEnv("NODE_ENV", "production");
     const response = authorizeRequest(request());

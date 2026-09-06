@@ -63,6 +63,15 @@ function sameOriginMutation(request: Request) {
 }
 
 export function authorizeRequest(request: Request) {
+  if (process.env.APP_PUBLIC_ACCESS === "true") {
+    if (!sameOriginMutation(request)) {
+      return isApiRequest(request)
+        ? jsonError("ORIGIN_NOT_ALLOWED", 403)
+        : new Response("Origin not allowed.", { status: 403 });
+    }
+    return null;
+  }
+
   const { enabled, password, username } = configuration();
   if (!enabled) return null;
 

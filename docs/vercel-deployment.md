@@ -12,6 +12,7 @@ Configure these values for Production and every Preview environment that should 
 - `APP_URL`: the canonical HTTPS origin for the deployment.
 - `APP_ACCESS_USERNAME`: the Basic Auth username; defaults to `aurelis`.
 - `APP_ACCESS_PASSWORD`: a random value of at least 16 characters. If it is absent or too short, production returns `503` instead of exposing the application.
+- `APP_PUBLIC_ACCESS`: set to `true` only when the site should be accessible without Basic Auth. Same-origin checks still protect mutation requests.
 - `WORKER_HEALTH_URL`: the HTTPS origin of the persistent worker service.
 - `WORKER_HEALTH_TOKEN`: a random value of at least 16 characters, shared only with the worker.
 - `OPENAI_API_KEY` and the model variables when AI evaluation is enabled.
@@ -71,6 +72,7 @@ DATABASE_URL=${{Postgres.DATABASE_URL}}
 APP_URL=https://<web-domain>
 APP_ACCESS_USERNAME=aurelis
 APP_ACCESS_PASSWORD=<random password>
+APP_PUBLIC_ACCESS=false
 WORKER_HEALTH_URL=http://worker.railway.internal:8080
 WORKER_HEALTH_TOKEN=<shared random secret>
 OPENAI_API_KEY=<rotated key>
@@ -84,4 +86,4 @@ After deployment, configure the same `WORKER_HEALTH_TOKEN` in both application s
 
 ## Access verification
 
-An unauthenticated page request must return `401` with `WWW-Authenticate: Basic`. An authenticated cross-origin mutation must return `403`. A production deployment with a missing access password must return `503`. These are fail-closed states, not application errors to bypass.
+With `APP_PUBLIC_ACCESS=false`, an unauthenticated page request must return `401` with `WWW-Authenticate: Basic`. With `APP_PUBLIC_ACCESS=true`, anonymous page requests are allowed while cross-origin mutations still return `403`. A protected production deployment with a missing access password must return `503`.
