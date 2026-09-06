@@ -30,4 +30,4 @@ ENV PORT=8080
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "pnpm db:migrate:deploy && pnpm --filter @aurelis/web start"]
+CMD ["sh", "-c", "cd /app/packages/database && node node_modules/prisma/build/index.js migrate deploy && cd /app/apps/web && exec node node_modules/next/dist/bin/next start"]
