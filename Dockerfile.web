@@ -26,6 +26,8 @@ RUN pnpm --filter @aurelis/database db:generate \
 
 USER pwuser
 
-EXPOSE 3000
+ENV PORT=8080
+
+EXPOSE 8080
 
 CMD ["sh", "-c", "pnpm db:migrate:deploy && pnpm --filter @aurelis/web start"]
