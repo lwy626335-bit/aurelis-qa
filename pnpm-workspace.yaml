@@ -5,6 +5,11 @@ packages:
 engineStrict: true
 autoInstallPeers: true
 
+overrides:
+  deepmerge-ts: 8.0.2
+  fast-uri: 3.1.6
+  mysql2: 3.23.1
+
 allowBuilds:
   "@prisma/engines": true
   esbuild: true

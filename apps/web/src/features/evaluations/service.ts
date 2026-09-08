@@ -73,9 +73,34 @@ export async function createEvaluation(input: CreateEvaluationInput) {
 export function listEvaluations() {
   return database.evaluation.findMany({
     where: { inputHash: { not: demoReport.metadata.inputHash } },
-    include: { job: true, project: true, technicalResult: true, website: true },
+    select: {
+      brandScore: true,
+      createdAt: true,
+      evaluatorModelId: true,
+      id: true,
+      inputHash: true,
+      inputType: true,
+      job: { select: { attemptCount: true, maxAttempts: true, stage: true, status: true } },
+      overallScore: true,
+      project: { select: { id: true, name: true } },
+      promptVersion: true,
+      reliabilityScore: true,
+      rubricVersion: true,
+      status: true,
+      technicalResult: { select: { id: true } },
+      technicalScore: true,
+      visualScore: true,
+      website: { select: { id: true, inputType: true, label: true, language: true } },
+    },
     orderBy: { createdAt: "desc" },
   });
+}
+
+export async function queueHasCapacity(additionalJobs = 1) {
+  const activeJobs = await database.evaluationJob.count({
+    where: { status: { in: ["QUEUED", "RUNNING"] } },
+  });
+  return activeJobs + additionalJobs <= 20;
 }
 
 export function getEvaluation(id: string) {

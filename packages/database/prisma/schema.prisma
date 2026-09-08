@@ -99,6 +99,15 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+model RateLimitBucket {
+  key             String   @id
+  windowStartedAt DateTime
+  requestCount    Int
+  updatedAt       DateTime @updatedAt
+
+  @@index([updatedAt])
+}
+
 model Project {
   id              String           @id @default(cuid())
   ownerId         String?

@@ -1,4 +1,5 @@
-import { createServer } from "node:http";
+import { createServer, request as httpRequest } from "node:http";
+import { request as httpsRequest } from "node:https";
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 
@@ -14,6 +15,7 @@ import type { ClaimedJob } from "./queue.js";
 
 type ElementNode = { nodeName: string; attrs?: { name: string; value: string }[]; childNodes?: ElementNode[] };
 type ValidatorMessage = { type?: string; message?: string; line?: number; extract?: string };
+const MAX_REMOTE_HTML_BYTES = 5_242_880;
 
 function isPrivateAddress(address: string) {
   const normalized = address.toLowerCase().replace(/^::ffff:/, "");
@@ -27,6 +29,71 @@ function isPrivateAddress(address: string) {
 export async function assertPublicHost(url: URL) {
   const addresses = await lookup(url.hostname, { all: true, verbatim: true });
   if (addresses.length === 0 || addresses.some(({ address }) => isPrivateAddress(address))) throw new Error("PRIVATE_ADDRESS_RESOLVED");
+  return addresses[0]!.address;
+}
+
+function headerValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+async function requestPublicHtml(url: URL) {
+  const address = await assertPublicHost(url);
+  const port = url.port || (url.protocol === "https:" ? "443" : "80");
+  if ((url.protocol === "https:" && port !== "443") || (url.protocol === "http:" && port !== "80")) {
+    throw new Error("TARGET_PORT_NOT_ALLOWED");
+  }
+
+  return new Promise<{ html: string; location?: string; status: number }>((resolve, reject) => {
+    const request = (url.protocol === "https:" ? httpsRequest : httpRequest)({
+      headers: { accept: "text/html", host: url.host, "user-agent": "AURELIS-QA/0.1" },
+      hostname: address,
+      method: "GET",
+      path: `${url.pathname}${url.search}`,
+      port,
+      servername: url.hostname,
+      timeout: 90_000,
+    }, (response) => {
+      const status = response.statusCode ?? 500;
+      if (status >= 300 && status < 400) {
+        const location = headerValue(response.headers.location);
+        response.resume();
+        resolve({ html: "", location, status });
+        return;
+      }
+      if (status < 200 || status >= 300) {
+        response.resume();
+        reject(new Error(`TARGET_HTTP_${status}`));
+        return;
+      }
+      const type = headerValue(response.headers["content-type"])?.toLowerCase() ?? "";
+      if (!type.includes("text/html") && !type.includes("application/xhtml+xml")) {
+        response.resume();
+        reject(new Error("TARGET_NOT_HTML"));
+        return;
+      }
+      const declaredLength = Number(headerValue(response.headers["content-length"]));
+      if (Number.isFinite(declaredLength) && declaredLength > MAX_REMOTE_HTML_BYTES) {
+        response.resume();
+        reject(new Error("TARGET_TOO_LARGE"));
+        return;
+      }
+      const chunks: Buffer[] = [];
+      let size = 0;
+      response.on("data", (chunk: Buffer) => {
+        size += chunk.length;
+        if (size > MAX_REMOTE_HTML_BYTES) {
+          response.destroy(new Error("TARGET_TOO_LARGE"));
+          return;
+        }
+        chunks.push(chunk);
+      });
+      response.on("end", () => resolve({ html: Buffer.concat(chunks).toString("utf8"), status }));
+      response.on("error", reject);
+    });
+    request.on("error", reject);
+    request.on("timeout", () => request.destroy(new Error("TARGET_TIMEOUT")));
+    request.end();
+  });
 }
 
 export async function fetchPublicHtml(value: string) {
@@ -34,20 +101,14 @@ export async function fetchPublicHtml(value: string) {
   for (let redirects = 0; redirects <= 5; redirects += 1) {
     const validation = validateEvaluationUrl(current);
     if (!validation.ok) throw new Error(validation.code);
-    await assertPublicHost(validation.url);
-    const response = await fetch(validation.url, { headers: { accept: "text/html", "user-agent": "AURELIS-QA/0.1" }, redirect: "manual", signal: AbortSignal.timeout(90_000) });
+    const response = await requestPublicHtml(validation.url);
     if (response.status >= 300 && response.status < 400) {
-      const location = response.headers.get("location");
+      const location = response.location;
       if (!location || redirects === 5) throw new Error("REDIRECT_LIMIT");
       current = new URL(location, validation.url).href;
       continue;
     }
-    if (!response.ok) throw new Error(`TARGET_HTTP_${response.status}`);
-    const type = response.headers.get("content-type")?.toLowerCase() ?? "";
-    if (!type.includes("text/html") && !type.includes("application/xhtml+xml")) throw new Error("TARGET_NOT_HTML");
-    const html = await response.text();
-    if (new TextEncoder().encode(html).byteLength > 5_242_880) throw new Error("TARGET_TOO_LARGE");
-    return html;
+    return response.html;
   }
   throw new Error("REDIRECT_LIMIT");
 }

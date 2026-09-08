@@ -62,8 +62,25 @@ function sameOriginMutation(request: Request) {
   }
 }
 
+function publicMutationAllowed(request: Request) {
+  if (["GET", "HEAD", "OPTIONS"].includes(request.method.toUpperCase())) return true;
+  if (request.method.toUpperCase() !== "POST") return false;
+  return [
+    "/api/brands",
+    "/api/evaluations",
+    "/api/experiments",
+    "/api/logo-evaluations",
+    "/api/rubrics",
+  ].includes(new URL(request.url).pathname);
+}
+
 export function authorizeRequest(request: Request) {
   if (process.env.APP_PUBLIC_ACCESS === "true") {
+    if (!publicMutationAllowed(request)) {
+      return isApiRequest(request)
+        ? jsonError("PUBLIC_MUTATION_NOT_ALLOWED", 403)
+        : new Response("Mutation not allowed in public mode.", { status: 403 });
+    }
     if (!sameOriginMutation(request)) {
       return isApiRequest(request)
         ? jsonError("ORIGIN_NOT_ALLOWED", 403)

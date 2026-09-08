@@ -1,7 +1,25 @@
 import "server-only";
 import { database } from "@aurelis/database/client";
 
-export function listExperiments() { return database.experiment.findMany({ include: { project: true, runs: { include: { evaluation: true }, orderBy: { runNumber: "asc" } } }, orderBy: { createdAt: "desc" } }); }
+export function listExperiments() {
+  return database.experiment.findMany({
+    select: {
+      createdAt: true,
+      id: true,
+      name: true,
+      project: { select: { id: true, name: true } },
+      runs: {
+        select: {
+          evaluation: { select: { id: true, overallScore: true, status: true } },
+          runNumber: true,
+        },
+        orderBy: { runNumber: "asc" },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 100,
+  });
+}
 
 export async function createExperiment(sourceEvaluationId: string, name: string, runCount: number) {
   if (!Number.isInteger(runCount) || runCount < 1 || runCount > 10) throw new Error("RUN_COUNT_INVALID");

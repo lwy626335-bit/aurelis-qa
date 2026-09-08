@@ -33,6 +33,12 @@ describe("authorizeRequest", () => {
     expect(response?.status).toBe(403);
   });
 
+  it("blocks destructive and paid follow-up operations in public mode", () => {
+    vi.stubEnv("APP_PUBLIC_ACCESS", "true");
+    expect(authorizeRequest(request("/api/evaluations/example", { method: "DELETE" }))?.status).toBe(403);
+    expect(authorizeRequest(request("/api/evaluations/example/rewrite", { method: "POST" }))?.status).toBe(403);
+  });
+
   it("fails closed in production when the password is missing", async () => {
     vi.stubEnv("NODE_ENV", "production");
     const response = authorizeRequest(request());

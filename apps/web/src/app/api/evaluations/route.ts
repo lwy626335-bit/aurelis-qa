@@ -1,6 +1,7 @@
 import { createEvaluationSchema } from "@/features/evaluations/schema";
-import { createEvaluation, listEvaluations } from "@/features/evaluations/service";
+import { createEvaluation, listEvaluations, queueHasCapacity } from "@/features/evaluations/service";
 import { authorizeRequest } from "@/lib/access-control";
+import { rateLimitResponse, withinRateLimit } from "@/lib/rate-limit";
 import { workerAvailable } from "@/lib/worker-availability";
 
 export async function GET(request: Request) {
@@ -17,6 +18,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const unauthorized = authorizeRequest(request);
   if (unauthorized) return unauthorized;
+  if (!(await withinRateLimit(request, "evaluations", 3))) return rateLimitResponse();
   try {
     const parsed = createEvaluationSchema.safeParse(await request.json());
     if (!parsed.success) {
@@ -27,6 +29,9 @@ export async function POST(request: Request) {
     }
 
     if (!(await workerAvailable())) return Response.json({ code: "WORKER_UNAVAILABLE" }, { status: 503 });
+    if (!(await queueHasCapacity())) {
+      return Response.json({ code: "QUEUE_CAPACITY_EXCEEDED" }, { status: 429, headers: { "retry-after": "30" } });
+    }
 
     const evaluation = await createEvaluation(parsed.data);
     return Response.json({ evaluationId: evaluation.id, status: evaluation.status }, { status: 201 });
