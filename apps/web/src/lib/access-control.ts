@@ -75,6 +75,7 @@ function sameOriginMutation(request: Request) {
   if (!origin) return true;
   try {
     const originUrl = new URL(origin);
+    if (originUrl.origin === "https://aurelis-qa-web.vercel.app") return true;
     const requestUrl = new URL(request.url);
     const host = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim()
       || request.headers.get("host")

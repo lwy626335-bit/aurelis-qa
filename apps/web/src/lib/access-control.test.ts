@@ -13,6 +13,12 @@ function authorization(username = "aurelis", password = "a-long-access-password"
 afterEach(() => vi.unstubAllEnvs());
 
 describe("authorizeRequest", () => {
+  it("accepts the production origin forwarded through the Railway proxy", () => {
+    vi.stubEnv("APP_PUBLIC_ACCESS", "true");
+    expect(authorizeRequest(new Request("https://web-production-5d1eb.up.railway.app/", {
+      method: "POST", headers: { origin: "https://aurelis-qa-web.vercel.app" },
+    }))).toBeNull();
+  });
   it("allows same-origin locale actions in public mode", () => {
     vi.stubEnv("APP_PUBLIC_ACCESS", "true");
     expect(authorizeRequest(request("/dashboard/logo", {

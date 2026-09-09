@@ -15,6 +15,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  experimental: {
+    serverActions: { allowedOrigins: ["aurelis-qa-web.vercel.app"] },
+  },
   devIndicators: false,
   poweredByHeader: false,
   reactStrictMode: true,
