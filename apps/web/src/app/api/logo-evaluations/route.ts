@@ -1,12 +1,14 @@
 import { createLogoEvaluation } from "@/features/logo-evaluations/service";
 import { detectLogoImageType, logoMetadataSchema, MAX_LOGO_BYTES } from "@/features/logo-evaluations/schema";
 import { authorizeRequest } from "@/lib/access-control";
+import { rateLimitResponse, withinRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const unauthorized = authorizeRequest(request);
   if (unauthorized) return unauthorized;
+  if (!(await withinRateLimit(request, "logo-evaluation", 2, 3_600_000))) return rateLimitResponse();
   try {
     const form = await request.formData();
     const logo = form.get("logo");

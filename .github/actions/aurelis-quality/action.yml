@@ -4,6 +4,9 @@ inputs:
   api-url:
     description: Base URL of the self-hosted AURELIS instance
     required: true
+  api-token:
+    description: Scoped AURELIS service token
+    required: true
   html-path:
     description: HTML file to evaluate
     default: index.html
@@ -11,7 +14,7 @@ inputs:
     description: Research project label
     default: GitHub PR
   target-language:
-    description: Target content language (en or ja)
+    description: Target content language (en, ja, or zh)
     default: en
 runs:
   using: composite
@@ -19,6 +22,7 @@ runs:
     - shell: bash
       env:
         INPUT_API_URL: ${{ inputs.api-url }}
+        INPUT_API_TOKEN: ${{ inputs.api-token }}
         INPUT_HTML_PATH: ${{ inputs.html-path }}
         INPUT_PROJECT_NAME: ${{ inputs.project-name }}
         INPUT_TARGET_LANGUAGE: ${{ inputs.target-language }}

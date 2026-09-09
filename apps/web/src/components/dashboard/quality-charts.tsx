@@ -109,15 +109,15 @@ export function QualityTrend({ data, locale }: { data: readonly TrendDatum[]; lo
             <AreaChart accessibilityLayer={false} data={[...data]} margin={{ top: 12, right: 8, left: -22, bottom: 0 }}>
               <defs>
                 <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#d6b978" stopOpacity={0.24} />
-                  <stop offset="100%" stopColor="#d6b978" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#f4f4f4" stopOpacity={0.24} />
+                  <stop offset="100%" stopColor="#f4f4f4" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.07)" />
               <XAxis dataKey="label" tick={{ fill: "#858893", fontSize: 10 }} tickLine={false} axisLine={false} />
               <YAxis domain={[60, 100]} tick={{ fill: "#858893", fontSize: 10 }} tickLine={false} axisLine={false} />
-              <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: "rgba(214,185,120,0.3)" }} />
-              <Area isAnimationActive={false} name={text({ en: "Quality score", ja: "品質スコア", zh: "质量分数" })} type="monotone" dataKey="quality" stroke="#d6b978" strokeWidth={2} fill={`url(#${gradientId})`} activeDot={{ r: 4, fill: "#d6b978", strokeWidth: 0 }} />
+              <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: "rgba(255,255,255,0.3)" }} />
+              <Area isAnimationActive={false} name={text({ en: "Quality score", ja: "品質スコア", zh: "质量分数" })} type="monotone" dataKey="quality" stroke="#f4f4f4" strokeWidth={2} fill={`url(#${gradientId})`} activeDot={{ r: 4, fill: "#f4f4f4", strokeWidth: 0 }} />
             </AreaChart>
           </ResponsiveContainer>
         </div>

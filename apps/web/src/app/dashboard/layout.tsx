@@ -19,6 +19,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <DashboardShell
       dictionary={dictionary}
+      locale={locale}
       localeSwitcher={
         <LocaleSwitcher key="dashboard-locale-switcher" dictionary={dictionary} locale={locale} />
       }

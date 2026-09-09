@@ -8,7 +8,7 @@ import {
 import Link from "next/link";
 
 import { EvaluationSelectionList, type EvaluationSelectionLabels } from "@/components/evaluations/evaluation-selection-list";
-import { listEvaluations } from "@/features/evaluations/service";
+import { countEvaluations, listEvaluations } from "@/features/evaluations/service";
 import { localeCode, localize, type Dictionary } from "@/i18n/config";
 import { getDictionary } from "@/i18n/server";
 
@@ -40,23 +40,20 @@ export default async function EvaluationsPage({
   const selectedStatus = statuses.includes(query.status as (typeof statuses)[number]) ? query.status! : "ALL";
   let evaluations: Awaited<ReturnType<typeof listEvaluations>> = [];
   let unavailable = false;
+  let total = 0;
+  let totalPages = 1;
+  const requestedPage = Number.parseInt(query.page ?? "1", 10);
+  let page = Number.isFinite(requestedPage) ? Math.max(requestedPage, 1) : 1;
 
   try {
-    evaluations = await listEvaluations();
+    const options = { query: search || undefined, status: selectedStatus === "ALL" ? undefined : selectedStatus as Exclude<(typeof statuses)[number], "ALL"> };
+    total = await countEvaluations(options);
+    totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    page = Math.min(page, totalPages);
+    evaluations = await listEvaluations({ ...options, skip: (page - 1) * PAGE_SIZE, take: PAGE_SIZE });
   } catch {
     unavailable = true;
   }
-
-  const normalizedSearch = search.toLocaleLowerCase(localeCode(locale));
-  const filtered = evaluations.filter((evaluation) => {
-    const matchesStatus = selectedStatus === "ALL" || evaluation.status === selectedStatus;
-    const searchable = `${evaluation.website.label} ${evaluation.project.name} ${evaluation.inputType}`.toLocaleLowerCase();
-    return matchesStatus && (!normalizedSearch || searchable.includes(normalizedSearch));
-  });
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const requestedPage = Number.parseInt(query.page ?? "1", 10);
-  const page = Number.isFinite(requestedPage) ? Math.min(Math.max(requestedPage, 1), totalPages) : 1;
-  const visibleEvaluations = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const selectionLabels: EvaluationSelectionLabels = {
     cancelConfirm: text({ en: "Cancel tasks", ja: "タスクをキャンセル", zh: "取消任务" }),
     cancelDescription: text({
@@ -116,7 +113,7 @@ export default async function EvaluationsPage({
           <h1 className="text-4xl font-medium tracking-[-0.045em]">{copy.title}</h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">{copy.description}</p>
         </div>
-        <Link className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-control)] bg-[var(--accent)] px-5 text-sm font-medium text-[#17140d]" href="/dashboard/evaluations/new">
+        <Link className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-control)] bg-[var(--accent)] px-5 text-sm font-medium text-[#161616]" href="/dashboard/evaluations/new">
           {copy.createTitle}<ArrowRight aria-hidden="true" className="ml-2 size-4" />
         </Link>
       </div>
@@ -135,7 +132,7 @@ export default async function EvaluationsPage({
             ))}
           </select>
         </label>
-        <button className="min-h-11 rounded-[var(--radius-control)] bg-[var(--accent)] px-4 text-sm font-medium text-[#17140d]" type="submit">
+        <button className="min-h-11 rounded-[var(--radius-control)] bg-[var(--accent)] px-4 text-sm font-medium text-[#161616]" type="submit">
           {text({ en: "Apply", ja: "適用", zh: "应用" })}
         </button>
         {(search || selectedStatus !== "ALL") && (
@@ -147,7 +144,7 @@ export default async function EvaluationsPage({
 
       {unavailable ? (
         <div className="panel-flat mt-5 p-6 text-sm text-[var(--critical)]" role="alert">{copy.databaseUnavailable}</div>
-      ) : evaluations.length === 0 ? (
+      ) : total === 0 && !search && selectedStatus === "ALL" ? (
         <div className="panel-flat mt-5 grid min-h-64 place-items-center p-7 text-center">
           <div>
             <Database aria-hidden="true" className="mx-auto size-7 text-[var(--accent)]" />
@@ -155,7 +152,7 @@ export default async function EvaluationsPage({
             <p className="mt-2 text-sm text-[var(--text-secondary)]">{copy.emptyBody}</p>
           </div>
         </div>
-      ) : filtered.length === 0 ? (
+      ) : total === 0 && (search || selectedStatus !== "ALL") ? (
         <div className="mt-5 border-y border-white/[0.08] py-14 text-center">
           <MagnifyingGlass aria-hidden="true" className="mx-auto size-6 text-[var(--text-tertiary)]" />
           <h2 className="mt-4 text-lg font-medium">{text({ en: "No matching evaluations", ja: "一致する評価がありません", zh: "没有匹配的评估" })}</h2>
@@ -164,13 +161,13 @@ export default async function EvaluationsPage({
       ) : (
         <>
           <div className="mt-5 flex items-center justify-between text-xs text-[var(--text-tertiary)]">
-            <p>{text({ en: `${filtered.length} ${filtered.length === 1 ? "result" : "results"}`, ja: `${filtered.length} 件`, zh: `${filtered.length} 条结果` })}</p>
+            <p>{text({ en: `${total} ${total === 1 ? "result" : "results"}`, ja: `${total} 件`, zh: `${total} 条结果` })}</p>
             <p>{text({ en: `Page ${page} of ${totalPages}`, ja: `${page} / ${totalPages} ページ`, zh: `第 ${page} 页，共 ${totalPages} 页` })}</p>
           </div>
 
           <EvaluationSelectionList
             dateLocale={localeCode(locale)}
-            evaluations={visibleEvaluations.map((evaluation) => ({
+            evaluations={evaluations.map((evaluation) => ({
               createdAt: evaluation.createdAt.toISOString(),
               id: evaluation.id,
               inputType: evaluation.inputType,

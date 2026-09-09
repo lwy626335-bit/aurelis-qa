@@ -9,7 +9,7 @@ import type { CreateBrandInput } from "./schema";
 const hash = (content: string) => createHash("sha256").update(content).digest("hex");
 
 export function listBrands() {
-  return database.brandProfile.findMany({ include: { examples: true, project: true, referenceSources: true }, orderBy: { createdAt: "desc" } });
+  return database.brandProfile.findMany({ select: { corpusVersion: true, description: true, examples: { select: { id: true } }, id: true, name: true, project: { select: { id: true, name: true } }, referenceSources: { select: { id: true } } }, orderBy: { createdAt: "desc" }, take: 100 });
 }
 
 export function getBrand(id: string) {

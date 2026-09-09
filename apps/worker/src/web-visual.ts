@@ -1,14 +1,13 @@
 import { database } from "@aurelis/database/client";
-import { calculateVisualScore, enforceAiAssessmentScope, webVisualDimensionWeights, webVisualEvaluationOutputSchema } from "@aurelis/evaluation";
+import { calculateVisualScore, defaultEvaluationRunConfig, enforceAiAssessmentScope, evaluationRunConfigSchema, webVisualDimensionWeights, webVisualEvaluationOutputSchema } from "@aurelis/evaluation";
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 import { chromium } from "playwright";
 
 import { websiteOverallScore } from "./overall.js";
-import { fetchPublicHtml, serveSnapshot } from "./technical.js";
-
-const MODEL_ID = process.env.OPENAI_VISION_EVALUATION_MODEL || "gpt-5.6-luna";
-const PROMPT_VERSION = "web-visual-evaluator-v1.0";
+import type { ClaimedJob } from "./queue.js";
+import { assertJobActive } from "./queue.js";
+import { serveSnapshot } from "./technical.js";
 
 async function captureScreenshots(url: string) {
   const browser = await chromium.launch({ headless: true });
@@ -26,20 +25,21 @@ async function captureScreenshots(url: string) {
   }
 }
 
-export async function runWebVisualEvaluation(evaluationId: string) {
+export async function runWebVisualEvaluation(job: ClaimedJob) {
   if (!process.env.OPENAI_API_KEY) throw new Error("AI_EVALUATION_UNAVAILABLE");
-  const evaluation = await database.evaluation.findUnique({ where: { id: evaluationId }, include: { website: true } });
+  const evaluationId = job.evaluationId;
+  const evaluation = await database.evaluation.findUnique({ where: { id: evaluationId }, include: { website: true, versions: { orderBy: { createdAt: "desc" }, take: 1 } } });
   if (!evaluation) throw new Error("EVALUATION_NOT_FOUND");
-  const html = evaluation.inputType === "URL"
-    ? await fetchPublicHtml(evaluation.website.canonicalUrl ?? "")
-    : evaluation.website.htmlContent;
+  const html = evaluation.inputType === "URL" ? evaluation.website.fetchedHtmlContent : evaluation.website.htmlContent;
   if (!html) throw new Error("VISUAL_TARGET_UNAVAILABLE");
+  const parsedConfig = evaluationRunConfigSchema.safeParse(evaluation.versions[0]?.reasoningConfiguration);
+  const runConfig = parsedConfig.success ? parsedConfig.data : defaultEvaluationRunConfig();
 
   const snapshot = await serveSnapshot(html, evaluation.website.cssContent ?? "");
   try {
     const [desktop, mobile] = await captureScreenshots(snapshot.url);
     if (!desktop || !mobile) throw new Error("VISUAL_SCREENSHOT_MISSING");
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, maxRetries: 1, timeout: 90_000 });
     const response = await client.responses.parse({
       input: [
         {
@@ -55,23 +55,24 @@ export async function runWebVisualEvaluation(evaluationId: string) {
           ],
         },
       ],
-      model: MODEL_ID,
-      reasoning: { effort: "low" },
+      model: runConfig.visual.modelId,
+      reasoning: { effort: runConfig.visual.reasoningEffort },
       store: false,
       text: { format: zodTextFormat(webVisualEvaluationOutputSchema, "web_visual_evaluation") },
     });
     if (!response.output_parsed) throw new Error("AI_VISUAL_UNPARSED");
     const result = enforceAiAssessmentScope(webVisualEvaluationOutputSchema.parse(response.output_parsed), evaluation.aiGenerated);
     const visualScore = calculateVisualScore(result.dimensions, webVisualDimensionWeights);
-    const overallScore = websiteOverallScore({ brand: evaluation.brandScore, technical: evaluation.technicalScore, visual: visualScore });
+    const overallScore = websiteOverallScore({ brand: evaluation.brandScore, technical: evaluation.technicalScore, visual: visualScore }, evaluation.versions[0]?.weightSet);
 
+    await assertJobActive(job);
     await database.$transaction([
       database.webVisualResult.upsert({
         where: { evaluationId },
-        create: { aiAssessment: result.aiAssessment as never, dimensionScores: result.dimensions as never, evaluationId, modelId: MODEL_ID, promptVersion: PROMPT_VERSION, recommendations: result.recommendations as never, summary: result.summary },
-        update: { aiAssessment: result.aiAssessment as never, dimensionScores: result.dimensions as never, modelId: MODEL_ID, promptVersion: PROMPT_VERSION, recommendations: result.recommendations as never, summary: result.summary },
+        create: { aiAssessment: result.aiAssessment as never, dimensionScores: result.dimensions as never, evaluationId, modelId: runConfig.visual.modelId, promptVersion: runConfig.visual.promptVersion, recommendations: result.recommendations as never, summary: result.summary },
+        update: { aiAssessment: result.aiAssessment as never, dimensionScores: result.dimensions as never, modelId: runConfig.visual.modelId, promptVersion: runConfig.visual.promptVersion, recommendations: result.recommendations as never, summary: result.summary },
       }),
-      database.evaluation.update({ where: { id: evaluationId }, data: { completedAt: evaluation.brandProfileId ? null : new Date(), evaluatorModel: "GPT-5.6 Luna", evaluatorModelId: MODEL_ID, overallScore, promptVersion: PROMPT_VERSION, status: evaluation.brandProfileId ? "RUNNING" : "COMPLETED", visualScore } }),
+      database.evaluation.update({ where: { id: evaluationId }, data: { completedAt: evaluation.brandProfileId ? null : new Date(), evaluatorModel: runConfig.visual.modelId, evaluatorModelId: runConfig.visual.modelId, overallScore, promptVersion: runConfig.visual.promptVersion, status: evaluation.brandProfileId ? "RUNNING" : "COMPLETED", visualScore } }),
     ]);
     return visualScore;
   } finally {

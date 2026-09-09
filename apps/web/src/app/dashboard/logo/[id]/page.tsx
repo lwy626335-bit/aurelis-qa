@@ -33,7 +33,7 @@ export default async function LogoEvaluationResultPage({ params }: { params: Pro
   return (
     <main className="mx-auto w-full max-w-[1100px] px-4 py-8 md:px-7 md:py-12">
       <Link className="inline-flex items-center gap-2 text-xs text-[var(--text-secondary)] hover:text-[var(--accent)]" href="/dashboard/logo"><ArrowLeft aria-hidden="true" className="size-4" />{text({ en: "Evaluate another logo", ja: "別のロゴを評価", zh: "评价另一个 Logo" })}</Link>
-      <section className="mt-7 grid gap-8 border-y border-white/[0.08] py-8 md:grid-cols-[auto_minmax(0,1fr)] md:items-center">
+      <section className="workspace-section mt-7 grid gap-8 border-y border-white/[0.08] py-8 md:grid-cols-[auto_minmax(0,1fr)] md:items-center">
         <ScoreGauge label={text({ en: "Logo score", ja: "ロゴスコア", zh: "Logo 评分" })} score={evaluation.overallScore} />
         <div>
           <p className="font-mono text-[10px] text-[var(--accent)]">{evaluation.modelId} · {evaluation.promptVersion}</p>

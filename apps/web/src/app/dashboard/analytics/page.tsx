@@ -54,19 +54,19 @@ export default async function AnalyticsPage() {
           {text({ en: "Evaluation storage is unavailable.", ja: "評価ストレージを利用できません。", zh: "评估数据存储暂不可用。" })}
         </div>
       ) : evaluations.length === 0 ? (
-        <section className="mt-7 grid min-h-72 place-items-center border-y border-white/[0.08] py-12 text-center">
+        <section className="workspace-section mt-7 grid min-h-72 place-items-center border-y border-white/[0.08] py-12 text-center">
           <div>
             <Database aria-hidden="true" className="mx-auto size-7 text-[var(--accent)]" />
             <h2 className="mt-5 text-xl font-medium">{text({ en: "No evaluations to analyze", ja: "分析できる評価がありません", zh: "没有可供分析的评估" })}</h2>
             <p className="mt-2 text-sm text-[var(--text-secondary)]">{text({ en: "Create an evaluation to populate this workspace.", ja: "最初の評価を作成すると、ここに統計が表示されます。", zh: "创建第一次评估后，这里会显示统计信息。" })}</p>
-            <Link className="mt-6 inline-flex min-h-11 items-center rounded-[var(--radius-control)] bg-[var(--accent)] px-5 text-sm font-medium text-[#17140d]" href="/dashboard/evaluations/new">
+            <Link className="mt-6 inline-flex min-h-11 items-center rounded-[var(--radius-control)] bg-[var(--accent)] px-5 text-sm font-medium text-[#161616]" href="/dashboard/evaluations/new">
               {text({ en: "Create evaluation", ja: "評価を作成", zh: "创建评估" })}
             </Link>
           </div>
         </section>
       ) : (
         <>
-          <section className="mt-7 grid overflow-hidden border-y border-white/[0.08] lg:grid-cols-[1.08fr_0.92fr] lg:divide-x lg:divide-white/[0.08]">
+          <section className="workspace-section mt-7 grid overflow-hidden border-y border-white/[0.08] lg:grid-cols-[1.08fr_0.92fr] lg:divide-x lg:divide-white/[0.08]">
             <article className="py-7 lg:p-7">
               <div className="flex items-start justify-between gap-5">
                 <div>

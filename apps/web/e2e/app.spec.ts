@@ -18,7 +18,8 @@ test.describe("AURELIS", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Quality you can prove." })).toBeVisible();
     await expect(page.getByText("Demo dataset", { exact: false }).first()).toBeVisible();
     await revealLandingSections(page);
-    await expect(page.getByRole("heading", { name: "A method you can inspect." })).toBeVisible();
+    await expect(page.locator("[data-count]")).toHaveCount(4);
+    await expect(page.getByRole("contentinfo").getByRole("link", { name: "Documentation" })).toHaveAttribute("href", "/dashboard/documentation");
 
     await page.screenshot({ path: testInfo.outputPath("landing.png"), fullPage: true });
     await Promise.all([
@@ -56,13 +57,14 @@ test.describe("AURELIS", () => {
     await expect(page.getByRole("link", { name: "Run this check on my website" })).toHaveAttribute("href", "/dashboard/evaluations/new");
   });
 
-  test("dashboard uses the compact navigation rail at 1024px", async ({ page }) => {
+  test("dashboard uses the horizontal workspace navigation at 1024px", async ({ page }) => {
     test.skip(test.info().project.name === "mobile-chromium", "Desktop responsive assertion");
     await page.setViewportSize({ width: 1024, height: 900 });
     await page.goto("/dashboard/demo");
-    const sidebar = page.locator("aside").first();
-    await expect(sidebar).toBeVisible();
-    expect((await sidebar.boundingBox())?.width).toBe(72);
+    const navigation = page.locator('nav[data-compact="true"]');
+    await expect(navigation).toBeVisible();
+    await expect(navigation.getByRole("link", { name: "Technical", exact: true })).toHaveAttribute("href", "/dashboard/technical");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1024);
     await expect(page.getByRole("heading", { name: "Priority findings" })).toBeVisible();
   });
 
@@ -173,7 +175,7 @@ test.describe("AURELIS", () => {
     const hero = page.getByRole("heading", { level: 1, name: "Quality you can prove." });
     await expect(hero).toBeVisible();
     await expect(hero).toHaveCSS("opacity", "1");
-    await expect(page.getByRole("heading", { name: "The score is only the start." })).toBeVisible();
+    await expect(page.locator("[data-count]")).toHaveText(["87.6", "91.4", "81.9", "94.0"]);
   });
 
   test("mobile navigation opens, closes, and reaches the dashboard", async ({ page }) => {
@@ -184,7 +186,7 @@ test.describe("AURELIS", () => {
     await expect(menuButton).toBeVisible();
     await menuButton.click();
     await expect(page.getByRole("navigation", { name: "Mobile navigation" })).toBeVisible();
-    await page.getByRole("link", { name: "Open demo" }).last().click();
+    await page.getByRole("navigation", { name: "Mobile navigation" }).getByRole("link", { name: "Evidence" }).click();
 
     await expect(page).toHaveURL(/\/dashboard\/demo$/);
   });

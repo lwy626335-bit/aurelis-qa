@@ -33,7 +33,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
           {text({ en: "Evaluation data for comparison is unavailable.", ja: "比較用の評価データを取得できません。", zh: "对比所需的评估数据暂不可用。" })}
         </div>
       ) : rows.length < 2 ? (
-        <section className="mt-7 grid min-h-64 place-items-center border-y border-white/[0.08] py-12 text-center">
+        <section className="workspace-section mt-7 grid min-h-64 place-items-center border-y border-white/[0.08] py-12 text-center">
           <div>
             <h2 className="text-xl font-medium">{text({ en: "Two evaluations are required", ja: "比較には2件の評価が必要です", zh: "至少需要两次评估" })}</h2>
             <p className="mt-2 text-sm text-[var(--text-secondary)]">{text({ en: "Create at least one more evaluation to compare conditions and scores.", ja: "条件やスコアの差を確認するには、もう1件以上作成してください。", zh: "请再创建至少一次评估，以对比条件和分数。" })}</p>

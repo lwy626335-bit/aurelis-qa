@@ -29,7 +29,7 @@ export default async function TechnicalPage() {
         {unavailable ? (
           <div className="panel-flat p-6 text-sm text-[var(--critical)]" role="alert">{text({ en: "Technical evaluation data is unavailable.", ja: "技術評価データを取得できません。", zh: "技术评估数据暂不可用。" })}</div>
         ) : completed.length === 0 ? (
-          <section className="grid min-h-64 place-items-center border-y border-white/[0.08] py-12 text-center">
+          <section className="workspace-section grid min-h-64 place-items-center border-y border-white/[0.08] py-12 text-center">
             <div>
               <h2 className="text-xl font-medium">{text({ en: "No completed technical evaluations", ja: "完了した技術評価がありません", zh: "还没有已完成的技术评估" })}</h2>
               <p className="mt-2 max-w-lg text-sm leading-6 text-[var(--text-secondary)]">{text({ en: "Create an evaluation and completed technical checks will appear here.", ja: "評価を作成すると、完了した技術チェックがここに表示されます。", zh: "创建评估后，已完成的技术检查会显示在这里。" })}</p>

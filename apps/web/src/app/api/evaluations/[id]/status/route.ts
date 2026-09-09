@@ -17,6 +17,8 @@ export async function GET(request: Request, context: EvaluationStatusRouteContex
         jobStatus: evaluation.job?.status ?? null,
         stage: evaluation.job?.stage ?? null,
         attemptCount: evaluation.job?.attemptCount ?? 0,
+        cancellationRequested: Boolean(evaluation.job?.cancelRequestedAt),
+        heartbeatAt: evaluation.job?.heartbeatAt ?? null,
         maxAttempts: evaluation.job?.maxAttempts ?? 0,
         hasTechnicalResult: Boolean(evaluation.technicalResult),
         hasBrandResult: Boolean(evaluation.brandResult),

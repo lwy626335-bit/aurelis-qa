@@ -9,8 +9,8 @@ export default async function DocumentationPage() {
   const text = <T,>(values: { en: T; ja: T; zh: T }) => localize(locale, values);
 
   return (
-    <main className="grid min-h-[calc(100dvh-4rem)] place-items-center p-5 md:p-8">
-      <div className="panel-flat w-full max-w-2xl p-7 md:p-10">
+    <main data-layout="document" className="grid min-h-[60dvh] place-items-center p-5 md:p-8">
+      <div className="panel-flat w-full max-w-3xl p-7 md:p-12">
         <BookOpenText aria-hidden="true" className="size-7 text-[var(--accent)]" weight="light" />
         <h1 className="mt-10 text-4xl font-medium tracking-[-0.045em] md:text-5xl">
           {text({ en: "Documentation", ja: "ドキュメント", zh: "文档" })}
@@ -18,7 +18,7 @@ export default async function DocumentationPage() {
         <p className="mt-5 max-w-[52ch] text-base leading-7 text-[var(--text-secondary)]">
           {text({ en: "Architecture and verification documents are included in the repository.", ja: "アーキテクチャと検証文書はリポジトリに含まれています。", zh: "架构与验证文档已包含在代码仓库中。" })}
         </p>
-        <Link href="/dashboard" className="mt-10 inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:text-[#e4cc98]">
+        <Link href="/dashboard" className="mt-10 inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:text-[#e5e5e5]">
           <ArrowLeft aria-hidden="true" className="size-4" /> {dictionary.future.returnDashboard}
         </Link>
       </div>

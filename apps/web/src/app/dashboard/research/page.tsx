@@ -33,12 +33,12 @@ export default async function ResearchPage() {
         {text({ en: "Run the same input 1–10 times and preserve evaluation conditions and variance.", ja: "同一入力を1〜10回実行し、評価条件と分散を保存します。", zh: "对同一输入运行 1–10 次，并保留评估条件与方差。" })}
       </p>
 
-      <section className="mt-7 border-y border-white/[0.08] py-5">
+      <section className="workspace-section mt-7 border-y border-white/[0.08] py-5">
         <div className="mb-4">
           <h2 className="text-sm font-medium">{text({ en: "New experiment", ja: "新しい実験", zh: "新建实验" })}</h2>
           <p className="mt-1 text-xs text-[var(--text-tertiary)]">{text({ en: "Repeat a stored evaluation under the same recorded conditions.", ja: "保存済み評価を基準に、同じ条件で反復実行します。", zh: "基于已保存的评估，在相同记录条件下重复运行。" })}</p>
         </div>
-        <ExperimentForm evaluations={evaluations.map((item) => ({ id: item.id, label: item.website.label }))} locale={locale} />
+        <ExperimentForm evaluations={evaluations.filter((item) => item.status === "COMPLETED").map((item) => ({ id: item.id, label: item.website.label }))} locale={locale} />
       </section>
 
       {unavailable ? (
@@ -46,7 +46,7 @@ export default async function ResearchPage() {
           {text({ en: "Research data is unavailable.", ja: "研究データを読み込めません。", zh: "研究数据暂不可用。" })}
         </div>
       ) : experiments.length === 0 ? (
-        <section className="mt-5 grid min-h-64 place-items-center border-y border-white/[0.08] py-10 text-center">
+        <section className="workspace-section mt-5 grid min-h-64 place-items-center border-y border-white/[0.08] py-10 text-center">
           <div>
             <Flask aria-hidden="true" className="mx-auto size-7 text-[var(--accent)]" weight="light" />
             <h2 className="mt-5 text-xl font-medium">{text({ en: "No experiments yet", ja: "実験はまだありません", zh: "还没有实验" })}</h2>

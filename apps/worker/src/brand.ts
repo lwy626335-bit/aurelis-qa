@@ -1,13 +1,13 @@
 import { database } from "@aurelis/database/client";
-import { brandEvaluationOutputSchema, brandEvaluationStructuredSchema, calculateReliability } from "@aurelis/evaluation";
+import { brandEvaluationOutputSchema, brandEvaluationStructuredSchema, calculateReliability, defaultEvaluationRunConfig, evaluationRunConfigSchema } from "@aurelis/evaluation";
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 
 import { websiteOverallScore } from "./overall.js";
+import type { ClaimedJob } from "./queue.js";
+import { assertJobActive } from "./queue.js";
 
-const MODEL_ID = process.env.OPENAI_EVALUATION_MODEL || "gpt-5.6-luna";
 const MODEL_DISPLAY_NAME = process.env.OPENAI_EVALUATION_MODEL_DISPLAY_NAME || "GPT-5.6 Luna";
-const PROMPT_VERSION = "brand-evaluator-v1.0";
 const dimensions = [
   ["tone-consistency", 20], ["vocabulary-alignment", 15], ["brand-personality", 20],
   ["audience-fit", 15], ["message-consistency", 15], ["writing-style", 10], ["cta-consistency", 5],
@@ -49,9 +49,9 @@ function verifyOutput(output: unknown, sources: Map<string, string>) {
   return parsed;
 }
 
-async function callStage(client: OpenAI, input: string, stage: "evaluator" | "reviewer") {
+async function callStage(client: OpenAI, input: string, stage: "evaluator" | "reviewer", modelId: string) {
   const response = await client.responses.parse({
-    model: MODEL_ID,
+    model: modelId,
     input: [
       { role: "system", content: `You are the independent ${stage} in an evidence-based brand voice study. Use only supplied sources and rubric. No evidence means insufficient_evidence. Do not calculate an overall score. Return every rubric dimension exactly once. Preserve evidence excerpts verbatim. Respond in the target content language.` },
       { role: "user", content: input },
@@ -62,17 +62,21 @@ async function callStage(client: OpenAI, input: string, stage: "evaluator" | "re
   return parseStageOutput(response, stage);
 }
 
-export async function runBrandEvaluation(evaluationId: string) {
+export async function runBrandEvaluation(job: ClaimedJob) {
   if (!process.env.OPENAI_API_KEY) throw new Error("AI_EVALUATION_UNAVAILABLE");
+  const evaluationId = job.evaluationId;
   const evaluation = await database.evaluation.findUnique({
     where: { id: evaluationId },
-    include: { brandProfile: { include: { examples: true, referenceSources: true } }, website: true },
+    include: { brandProfile: { include: { examples: true, referenceSources: true } }, website: true, versions: { orderBy: { createdAt: "desc" }, take: 1 } },
   });
   if (!evaluation?.brandProfile) return null;
-  if (!evaluation.website.htmlContent) throw new Error("BRAND_TARGET_TEXT_UNAVAILABLE");
+  const html = evaluation.website.htmlContent ?? evaluation.website.fetchedHtmlContent;
+  if (!html) throw new Error("BRAND_TARGET_TEXT_UNAVAILABLE");
 
   const brand = evaluation.brandProfile;
-  const target = targetText(evaluation.website.htmlContent);
+  const parsedConfig = evaluationRunConfigSchema.safeParse(evaluation.versions[0]?.reasoningConfiguration);
+  const runConfig = parsedConfig.success ? parsedConfig.data : defaultEvaluationRunConfig();
+  const target = targetText(html);
   const sources = new Map<string, string>([["target", target]]);
   brand.examples.forEach((item) => sources.set(item.id, item.content));
   brand.referenceSources.forEach((item) => sources.set(item.id, item.content));
@@ -82,13 +86,13 @@ export async function runBrandEvaluation(evaluationId: string) {
     sources: [...sources].map(([sourceId, content]) => ({ content, sourceId })),
     targetContentLanguage: evaluation.website.language,
   });
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const evaluator = verifyOutput(await callStage(client, payload, "evaluator"), sources);
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, maxRetries: 1, timeout: 90_000 });
+  const evaluator = verifyOutput(await callStage(client, payload, "evaluator", runConfig.brand.modelId), sources);
   const reviewerInput = JSON.stringify({ evaluator, instruction: "Verify anchors, reasoning, score/rubric consistency, and return the corrected complete result.", payload: JSON.parse(payload) });
-  const reviewer = verifyOutput(await callStage(client, reviewerInput, "reviewer"), sources);
+  const reviewer = verifyOutput(await callStage(client, reviewerInput, "reviewer", runConfig.brand.modelId), sources);
   const brandScore = Math.round(reviewer.dimensions.reduce((total, item) => total + item.score, 0) * 10) / 10;
   const insufficient = reviewer.dimensions.some((item) => item.insufficientEvidence);
-  const overallScore = websiteOverallScore({ brand: brandScore, technical: evaluation.technicalScore, visual: evaluation.visualScore });
+  const overallScore = websiteOverallScore({ brand: brandScore, technical: evaluation.technicalScore, visual: evaluation.visualScore }, evaluation.versions[0]?.weightSet);
   const evidenceItems = reviewer.dimensions.flatMap((item) => item.evidence);
   const strengthValue = { insufficient: 0, moderate: 70, strong: 100, weak: 40 } as const;
   const reliabilityComponents = {
@@ -99,14 +103,15 @@ export async function runBrandEvaluation(evaluationId: string) {
   };
   const reliabilityScore = calculateReliability(reliabilityComponents);
 
+  await assertJobActive(job);
   await database.$transaction(async (transaction) => {
     await transaction.evaluationEvidence.deleteMany({ where: { evaluationId, dimensionKey: { startsWith: "brand:" } } });
     await transaction.recommendation.deleteMany({ where: { evaluationId, dimensionKey: { startsWith: "brand:" } } });
     await transaction.brandResult.upsert({ where: { evaluationId }, create: { dimensionScores: reviewer.dimensions.map(({ dimensionKey, maxScore, score }) => ({ dimensionKey, maxScore, score })), evaluatorOutput: evaluator, evaluationId, insufficientEvidence: insufficient, reviewerOutput: { reliabilityComponents, result: reviewer } }, update: { dimensionScores: reviewer.dimensions.map(({ dimensionKey, maxScore, score }) => ({ dimensionKey, maxScore, score })), evaluatorOutput: evaluator, insufficientEvidence: insufficient, reviewerOutput: { reliabilityComponents, result: reviewer } } });
     await transaction.evaluationEvidence.createMany({ data: reviewer.dimensions.flatMap((item) => item.evidence.map((evidence) => ({ dimensionKey: `brand:${item.dimensionKey}`, evaluationId, excerpt: evidence.excerpt, maxScore: item.maxScore, observation: item.observation, reason: item.reason, score: item.score, strength: evidence.strength.toUpperCase() as "STRONG" | "MODERATE" | "WEAK" | "INSUFFICIENT" }))) });
     await transaction.recommendation.createMany({ data: reviewer.dimensions.filter((item) => item.recommendation.trim()).map((item) => ({ description: item.reason, dimensionKey: `brand:${item.dimensionKey}`, evaluationId, severity: "MEDIUM", suggestedFix: item.recommendation, title: item.observation.slice(0, 120) })) });
-    await transaction.evaluation.update({ where: { id: evaluationId }, data: { brandScore, completedAt: new Date(), evaluatorModel: MODEL_DISPLAY_NAME, evaluatorModelId: MODEL_ID, failureCode: evaluation.failureCode === "AI_VISUAL_UNAVAILABLE" ? evaluation.failureCode : null, failureMessage: evaluation.failureCode === "AI_VISUAL_UNAVAILABLE" ? evaluation.failureMessage : null, overallScore, promptVersion: PROMPT_VERSION, referenceCorpusVersion: brand.corpusVersion, reliabilityScore, status: overallScore === null || evaluation.visualScore === null ? "PARTIAL" : "COMPLETED" } });
-    await transaction.evaluationVersion.updateMany({ where: { evaluationId }, data: { evaluatorModelId: MODEL_ID, promptVersion: PROMPT_VERSION, referenceCorpusVersion: brand.corpusVersion } });
+    await transaction.evaluation.update({ where: { id: evaluationId }, data: { brandScore, completedAt: new Date(), evaluatorModel: MODEL_DISPLAY_NAME, evaluatorModelId: runConfig.brand.modelId, failureCode: evaluation.failureCode === "AI_VISUAL_UNAVAILABLE" ? evaluation.failureCode : null, failureMessage: evaluation.failureCode === "AI_VISUAL_UNAVAILABLE" ? evaluation.failureMessage : null, overallScore, promptVersion: runConfig.brand.promptVersion, referenceCorpusVersion: brand.corpusVersion, reliabilityScore, status: overallScore === null || evaluation.visualScore === null ? "PARTIAL" : "COMPLETED" } });
+    await transaction.evaluationVersion.updateMany({ where: { evaluationId }, data: { evaluatorModelId: runConfig.brand.modelId, promptVersion: runConfig.brand.promptVersion, referenceCorpusVersion: brand.corpusVersion } });
   });
   return brandScore;
 }

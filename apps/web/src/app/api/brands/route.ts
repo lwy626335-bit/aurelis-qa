@@ -1,6 +1,7 @@
 import { createBrandSchema } from "@/features/brands/schema";
 import { createBrand, listBrands } from "@/features/brands/service";
 import { authorizeRequest } from "@/lib/access-control";
+import { rateLimitResponse, withinRateLimit } from "@/lib/rate-limit";
 
 export async function GET(request: Request) {
   const unauthorized = authorizeRequest(request);
@@ -15,6 +16,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const unauthorized = authorizeRequest(request);
   if (unauthorized) return unauthorized;
+  if (!(await withinRateLimit(request, "brand-create", 5, 3_600_000))) return rateLimitResponse();
   const parsed = createBrandSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return Response.json({ code: "INVALID_INPUT", issues: parsed.error.issues }, { status: 400 });
   try {

@@ -37,7 +37,7 @@ export default async function BrandsPage() {
           {text({ en: "Brand storage is unavailable. No data was changed.", ja: "ブランドストレージを利用できません。データは変更されていません。", zh: "品牌数据存储暂不可用，数据没有发生变化。" })}
         </div>
       ) : brands.length === 0 ? (
-        <section className="mt-7 grid min-h-72 place-items-center border-y border-white/[0.08] py-12 text-center">
+        <section className="workspace-section mt-7 grid min-h-72 place-items-center border-y border-white/[0.08] py-12 text-center">
           <div>
             <Sparkle aria-hidden="true" className="mx-auto size-7 text-[var(--accent)]" />
             <h2 className="mt-5 text-xl font-medium">{text({ en: "No brand profiles yet", ja: "ブランドプロフィールがありません", zh: "还没有品牌资料" })}</h2>

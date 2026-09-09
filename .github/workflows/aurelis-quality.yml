@@ -9,13 +9,15 @@ jobs:
     continue-on-error: true
     env:
       AURELIS_API_URL: ${{ secrets.AURELIS_API_URL }}
+      AURELIS_API_TOKEN: ${{ secrets.AURELIS_API_TOKEN }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Submit static sample
-        if: ${{ env.AURELIS_API_URL != '' }}
+        if: ${{ env.AURELIS_API_URL != '' && env.AURELIS_API_TOKEN != '' }}
         uses: ./.github/actions/aurelis-quality
         with:
           api-url: ${{ env.AURELIS_API_URL }}
+          api-token: ${{ env.AURELIS_API_TOKEN }}
           html-path: .github/fixtures/aurelis-sample.html
           project-name: ${{ github.repository }} PR ${{ github.event.pull_request.number || 'manual' }}

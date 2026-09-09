@@ -4,6 +4,12 @@ import { createServer } from "node:http";
 import { database } from "@aurelis/database/client";
 
 const MINIMUM_TOKEN_LENGTH = 16;
+const STALE_LOOP_MS = 15_000;
+let lastLoopAt = Date.now();
+
+export function markWorkerLoop() {
+  lastLoopAt = Date.now();
+}
 
 function secureEqual(actual: string, expected: string) {
   const actualHash = createHash("sha256").update(actual).digest();
@@ -23,7 +29,13 @@ export async function startHealthServer(port = healthPort()) {
     response.setHeader("cache-control", "no-store");
     response.setHeader("content-type", "application/json; charset=utf-8");
 
-    if (request.method !== "GET" || request.url !== "/health") {
+    if (request.method === "GET" && request.url === "/live") {
+      response.statusCode = 200;
+      response.end(JSON.stringify({ status: "live" }));
+      return;
+    }
+
+    if (request.method !== "GET" || !["/health", "/ready"].includes(request.url ?? "")) {
       response.statusCode = 404;
       response.end(JSON.stringify({ status: "not-found" }));
       return;
@@ -37,6 +49,7 @@ export async function startHealthServer(port = healthPort()) {
     }
 
     try {
+      if (Date.now() - lastLoopAt > STALE_LOOP_MS) throw new Error("WORKER_LOOP_STALE");
       await database.$queryRaw`SELECT 1`;
       response.statusCode = 200;
       response.end(JSON.stringify({ status: "ready" }));
@@ -52,4 +65,3 @@ export async function startHealthServer(port = healthPort()) {
   });
   return server;
 }
-

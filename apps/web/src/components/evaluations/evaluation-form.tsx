@@ -72,7 +72,7 @@ export function EvaluationForm({ brands, dictionary, locale }: { brands: { id: s
               aria-pressed={inputType === value}
               className={`interactive-control flex min-h-20 items-center gap-3 rounded-[var(--radius-control)] border px-4 text-left text-sm ${
                 inputType === value
-                  ? "border-[var(--accent)]/55 bg-[rgba(214,185,120,0.07)] text-[var(--text)]"
+                  ? "border-[var(--accent)]/55 bg-[rgba(255,255,255,0.07)] text-[var(--text)]"
                   : "border-white/10 bg-white/[0.025] text-[var(--text-secondary)] hover:border-white/20"
               }`}
               key={value}

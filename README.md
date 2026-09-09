@@ -66,6 +66,8 @@ Implemented through Phase 7:
 - Real queued/cancelled states without fabricated progress or scores
 - Local PostgreSQL and Nu HTML Checker services
 - Atomic job leasing and technical result persistence
+- Renewable lease tokens, cooperative running-task cancellation, and exhausted-lease failure handling
+- Immutable URL snapshots shared by technical, visual, brand, and repeatability runs
 - Lighthouse lab, axe, Nu HTML Checker, and deterministic DOM/SEO analysis
 - Desktop/mobile visual design evaluation with deterministic application-owned weighting
 - Standalone Logo evaluation with five dimensions, multilingual output, provenance-aware AI risk, and history deletion
@@ -76,7 +78,7 @@ Implemented through Phase 7:
 - History, condition-aware comparison, and immutable rubric versions
 - Research experiments with deterministic mean, standard deviation, and variance
 - Server-side PDF reports, descriptive analytics, privacy disclosure, and cascade deletion
-- Public-project GitHub composite Action with non-blocking workflow defaults
+- Authenticated, idempotent public-project GitHub composite Action with non-blocking workflow defaults
 - Fail-closed production Basic authentication and same-origin mutation enforcement
 - Authenticated worker health gating before queue records are created
 

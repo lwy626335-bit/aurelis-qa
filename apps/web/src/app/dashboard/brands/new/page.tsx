@@ -6,7 +6,8 @@ export default async function NewBrandPage() {
   const { locale } = await getDictionary();
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 py-8 md:px-7 md:py-10">
+    <main data-layout="form" className="mx-auto w-full max-w-4xl px-4 py-8 md:px-7 md:py-10">
+      <header>
       <h1 className="text-4xl font-medium tracking-[-0.045em]">
         {localize(locale, { en: "Create brand profile", ja: "ブランドプロフィール作成", zh: "创建品牌资料" })}
       </h1>
@@ -17,6 +18,7 @@ export default async function NewBrandPage() {
           zh: "使用真实示例文案与可追溯的参考语料建立品牌资料，而不是只依赖主观标签。",
         })}
       </p>
+      </header>
       <section className="panel-flat mt-7 p-5 md:p-7">
         <BrandForm locale={locale} />
       </section>

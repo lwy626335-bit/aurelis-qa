@@ -8,6 +8,7 @@ The self-hosted research application separates untrusted input from the product 
 - Environment template contains no real credentials
 - Production requests fail closed unless a site-wide Basic Auth password of at least 16 characters is configured
 - API route handlers repeat the authentication check at the data boundary, and cross-origin mutation requests are rejected
+- GitHub submissions use a separate bearer service token scoped to `POST /api/evaluations`
 - Queue-producing APIs require an authenticated healthy worker before creating jobs in production
 - URL preflight accepts only HTTP and HTTPS, rejects embedded credentials, loopback names, metadata names, private IPv4 ranges, local IPv6 ranges, and multicast or reserved IPv4 literals
 - HTML, URLs, hashes, evidence, and tool outputs have distinct storage fields
@@ -16,8 +17,8 @@ The self-hosted research application separates untrusted input from the product 
 
 ## Remote URL boundary
 
-String validation alone is not an SSRF defense. The worker resolves DNS, validates every resolved address, repeats validation after redirects, and bounds response size and duration. It does not execute embedded remote resources; full live-resource evaluation requires network-layer isolation and connection pinning.
+String validation alone is not an SSRF defense. The worker resolves DNS, rejects every host with a private address, connects to the selected public address while preserving TLS hostname verification, repeats validation after redirects, and bounds response size while streaming. It does not execute embedded remote resources; defense in depth still requires worker egress isolation.
 
 Pasted JavaScript is not executed. HTML snapshots run with scripts removed and a deny-by-default Content Security Policy on a loopback-only ephemeral origin. URL documents are fetched with scheme, credential, DNS/IP, redirect, content-type, size, and timeout checks; embedded resources are not executed, so live performance is explicitly unavailable for URL snapshots.
 
-The production boundary now provides site-wide Basic Auth and origin enforcement for a single trusted research team. Multi-tenant deployment still requires per-user sessions, project authorization, distributed rate limits, an authenticated GitHub submission token, and independently verified worker network isolation. Do not treat the shared credential as multi-user isolation.
+The production boundary now provides site-wide Basic Auth and origin enforcement for a single trusted research team. Multi-tenant deployment still requires per-user sessions, project authorization, distributed rate limits, and independently verified worker network isolation. Do not treat the shared credential as multi-user isolation.

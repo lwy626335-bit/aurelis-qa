@@ -45,7 +45,7 @@ export default async function EvaluationStatusPage({ params }: { params: Promise
           <h1 className="mt-3 text-4xl font-medium tracking-[-0.045em]">{copy.detailTitle}</h1>
           <p className="mt-3 text-sm text-[var(--text-secondary)]">{evaluation.project.name} / {evaluation.website.label}</p>
         </div>
-        {evaluation.status === "QUEUED" && evaluation.job?.status === "QUEUED" && (
+        {["QUEUED", "RUNNING"].includes(evaluation.status) && evaluation.job && ["QUEUED", "RUNNING"].includes(evaluation.job.status) && (
           <CancelEvaluationButton dictionary={dictionary} evaluationId={evaluation.id} locale={locale} />
         )}
       </div>
@@ -134,7 +134,7 @@ export default async function EvaluationStatusPage({ params }: { params: Promise
 
       {evaluation.failureCode && <div className="mt-4 border-l-2 border-[var(--warning)] p-4 text-xs text-[var(--text-secondary)]"><span className="font-mono text-[var(--warning)]">{evaluation.failureCode}</span>{evaluation.failureMessage && <p className="mt-2">{evaluation.failureMessage}</p>}</div>}
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-white/[0.07] pt-5"><a className="text-xs text-[var(--accent)] underline underline-offset-4" href={`/api/reports/${evaluation.id}/pdf`}>{text({ en: "Export PDF", ja: "PDFを出力", zh: "导出 PDF" })}</a><DeleteEvaluationButton evaluationId={evaluation.id} locale={locale} /></div>
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-white/[0.07] pt-5"><a className="text-xs text-[var(--accent)] underline underline-offset-4" href={`/api/reports/${evaluation.id}/pdf`}>{text({ en: "Export PDF", ja: "PDFを出力", zh: "导出 PDF" })}</a>{["COMPLETED", "PARTIAL", "FAILED", "CANCELLED"].includes(evaluation.status) && <DeleteEvaluationButton evaluationId={evaluation.id} locale={locale} />}</div>
 
       {evaluation.overallScore === null && <div className="mt-4 border-l-2 border-[var(--warning)]/60 bg-[rgba(232,196,107,0.045)] p-4 text-sm text-[var(--text-secondary)]">
         {copy.overallUnavailable}

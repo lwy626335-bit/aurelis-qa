@@ -6,7 +6,7 @@ export default async function GitHubPage() {
   const text = <T,>(values: { en: T; ja: T; zh: T }) => localize(locale, values);
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 py-8 md:px-7 md:py-10">
+    <main data-layout="document" className="mx-auto w-full max-w-4xl px-4 py-8 md:px-7 md:py-10">
       <h1 className="text-4xl font-medium">GitHub Action</h1>
       <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
         {text({ en: "Submit checked-out HTML from a public web project to the AURELIS API. The workflow is non-blocking by default.", ja: "Checkout済みの公開WebプロジェクトからHTMLをAURELIS APIへ送信します。既定ではPRをBlockingしません。", zh: "将已检出的公开网页项目 HTML 提交到 AURELIS API。默认情况下，该流程不会阻止 PR。" })}

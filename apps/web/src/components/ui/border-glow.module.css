@@ -1,0 +1,123 @@
+.card {
+  --edge-proximity: 0;
+  --cursor-angle: 45deg;
+  --edge-sensitivity: 42;
+  --border-radius: 14px;
+  --glow-padding: 24px;
+  --glow-intensity: 0.55;
+  --fill-opacity: 0.12;
+  --mesh-one: #f4f4f4;
+  --mesh-two: #e8c46b;
+  --mesh-three: #8a93a3;
+
+  position: relative;
+  display: grid;
+  isolation: isolate;
+  border: 1px solid rgba(255, 255, 255, 0.095);
+  border-radius: var(--border-radius);
+  background: var(--card-bg, #0b0d12);
+  box-shadow: var(--shadow-panel), inset 0 1px rgba(255, 255, 255, 0.035);
+}
+
+.card::before,
+.card::after,
+.edgeLight {
+  position: absolute;
+  border-radius: inherit;
+  content: "";
+  opacity: calc(
+    var(--glow-intensity) *
+    (var(--edge-proximity) - var(--edge-sensitivity)) /
+    (100 - var(--edge-sensitivity))
+  );
+  pointer-events: none;
+  transition: opacity 260ms var(--ease-premium);
+}
+
+.card::before {
+  z-index: 0;
+  inset: -1px;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--cursor-angle),
+    transparent 0 29%,
+    var(--mesh-one) 39%,
+    var(--mesh-two) 48%,
+    var(--mesh-three) 57%,
+    transparent 67% 100%
+  );
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+.card::after {
+  z-index: 0;
+  inset: 1px;
+  background: conic-gradient(
+    from var(--cursor-angle),
+    transparent 0 31%,
+    color-mix(in srgb, var(--mesh-one) 38%, transparent) 45%,
+    color-mix(in srgb, var(--mesh-two) 24%, transparent) 52%,
+    transparent 67% 100%
+  );
+  filter: blur(18px);
+  mix-blend-mode: soft-light;
+  opacity: calc(
+    var(--fill-opacity) *
+    (var(--edge-proximity) - var(--edge-sensitivity)) /
+    (100 - var(--edge-sensitivity))
+  );
+}
+
+.edgeLight {
+  z-index: -1;
+  inset: calc(var(--glow-padding) * -1);
+  background: conic-gradient(
+    from var(--cursor-angle),
+    transparent 0 37%,
+    hsl(var(--glow-color) / 0.34) 48%,
+    transparent 59% 100%
+  );
+  filter: blur(20px);
+  mask-image: radial-gradient(ellipse at center, transparent 48%, #000 69%);
+}
+
+.inner {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: calc(var(--border-radius) - 1px);
+}
+
+.card:focus-within::before,
+.card:focus-within::after,
+.card:focus-within > .edgeLight {
+  opacity: calc(var(--glow-intensity) * 0.72);
+}
+
+.card[data-animated="true"]::before {
+  animation: border-glow-intro 1.15s var(--ease-premium) both;
+}
+
+@keyframes border-glow-intro {
+  0%, 100% { opacity: 0; }
+  48% { opacity: calc(var(--glow-intensity) * 0.7); }
+}
+
+@media (hover: none) {
+  .card::before {
+    opacity: calc(var(--glow-intensity) * 0.28);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card::before,
+  .card::after,
+  .edgeLight {
+    animation: none;
+    transition: none;
+  }
+}

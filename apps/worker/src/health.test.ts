@@ -19,6 +19,18 @@ afterEach(() => {
 });
 
 describe("worker health server", () => {
+  it("provides an unauthenticated liveness probe without touching the database", async () => {
+    const server = await startHealthServer(0);
+    const { port } = server.address() as AddressInfo;
+    try {
+      const response = await fetch(`http://127.0.0.1:${port}/live`);
+      expect(response.status).toBe(200);
+      expect(queryRaw).not.toHaveBeenCalled();
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
   it("requires the shared token and verifies database reachability", async () => {
     const server = await startHealthServer(0);
     const { port } = server.address() as AddressInfo;

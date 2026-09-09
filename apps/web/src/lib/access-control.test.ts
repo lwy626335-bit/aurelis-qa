@@ -33,6 +33,12 @@ describe("authorizeRequest", () => {
     expect(response?.status).toBe(403);
   });
 
+  it("blocks destructive and paid follow-up operations in public mode", () => {
+    vi.stubEnv("APP_PUBLIC_ACCESS", "true");
+    expect(authorizeRequest(request("/api/evaluations/example", { method: "DELETE" }))?.status).toBe(403);
+    expect(authorizeRequest(request("/api/evaluations/example/rewrite", { method: "POST" }))?.status).toBe(403);
+  });
+
   it("fails closed in production when the password is missing", async () => {
     vi.stubEnv("NODE_ENV", "production");
     const response = authorizeRequest(request());
@@ -44,6 +50,13 @@ describe("authorizeRequest", () => {
     vi.stubEnv("APP_ACCESS_PASSWORD", "a-long-access-password");
     const response = authorizeRequest(request("/api/evaluations", { headers: { authorization: authorization() } }));
     expect(response).toBeNull();
+  });
+
+  it("accepts a scoped service token only for evaluation submission", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("AURELIS_API_TOKEN", "a-long-service-token-value");
+    expect(authorizeRequest(request("/api/evaluations", { method: "POST", headers: { authorization: "Bearer a-long-service-token-value" } }))).toBeNull();
+    expect(authorizeRequest(request("/api/brands", { method: "POST", headers: { authorization: "Bearer a-long-service-token-value" } }))?.status).toBe(503);
   });
 
   it("rejects invalid credentials", () => {

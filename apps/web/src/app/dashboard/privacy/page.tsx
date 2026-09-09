@@ -10,12 +10,13 @@ export default async function PrivacyPage() {
   });
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 py-8 md:px-7 md:py-10">
+    <main data-layout="document" className="mx-auto w-full max-w-4xl px-4 py-8 md:px-7 md:py-10">
       <h1 className="text-4xl font-medium">{localize(locale, { en: "Privacy and data", ja: "プライバシーとデータ", zh: "隐私与数据" })}</h1>
       <div className="mt-7 space-y-4">
-        {sections.map(([title, body]) => (
-          <section className="panel-flat p-5" key={title}>
-            <h2 className="font-medium">{title}</h2>
+        {sections.map(([title, body], index) => (
+          <section className="panel-flat grid gap-4 p-7 md:grid-cols-[60px_220px_1fr]" key={title}>
+            <span aria-hidden="true" className="font-[family-name:var(--font-display)] text-3xl text-[var(--text-tertiary)]">0{index + 1}</span>
+            <h2 className="text-lg font-medium">{title}</h2>
             <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">{body}</p>
           </section>
         ))}

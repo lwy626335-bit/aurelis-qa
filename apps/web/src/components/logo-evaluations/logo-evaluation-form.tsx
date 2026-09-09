@@ -60,7 +60,7 @@ export function LogoEvaluationForm({ locale }: { locale: Locale }) {
     <form action={submit} className="space-y-7" ref={root}>
       <label className="block text-xs text-[var(--text-secondary)]">
         {text({ en: "Logo file", ja: "ロゴファイル", zh: "Logo 文件" })}
-        <span className="mt-2 grid min-h-32 cursor-pointer place-items-center rounded-[var(--radius-control)] border border-dashed border-white/15 bg-black/10 p-5 text-center hover:border-[var(--accent)]/50">
+        <span className="workspace-upload mt-2 grid min-h-32 cursor-pointer place-items-center rounded-[var(--radius-control)] border border-dashed border-white/15 bg-black/10 p-5 text-center hover:border-[var(--accent)]/50">
           <ImageSquare aria-hidden="true" className="size-6 text-[var(--accent)]" />
           <span className="mt-2 block text-sm text-[var(--text)]">{text({ en: "Choose PNG, JPEG, or WebP", ja: "PNG・JPEG・WebPを選択", zh: "选择 PNG、JPEG 或 WebP" })}</span>
           <span className="mt-1 block text-[10px] text-[var(--text-tertiary)]">{text({ en: "Maximum 8 MB. The source image is not stored.", ja: "最大8MB。元画像は保存されません。", zh: "最大 8 MB，原图不会被保存。" })}</span>

@@ -1,11 +1,16 @@
-export function websiteOverallScore({ brand, technical, visual }: { brand: number | null; technical: number | null; visual: number | null }) {
-  if (technical === null) return null;
-  const weighted = brand !== null && visual !== null
-    ? technical * 0.5 + visual * 0.3 + brand * 0.2
-    : visual !== null
-      ? technical * 0.6 + visual * 0.4
-      : brand !== null
-        ? technical * 0.6 + brand * 0.4
-        : null;
-  return weighted === null ? null : Math.round(weighted * 10) / 10;
+import { defaultOverallWeights, overallWeightsSchema } from "@aurelis/evaluation";
+
+export function websiteOverallScore(
+  scores: { brand: number | null; technical: number | null; visual: number | null },
+  configuredWeights: unknown = defaultOverallWeights,
+) {
+  if (scores.technical === null) return null;
+  const weights = overallWeightsSchema.safeParse(configuredWeights);
+  const selected = (Object.keys(scores) as (keyof typeof scores)[])
+    .filter((key) => scores[key] !== null && (weights.success ? weights.data[key] : defaultOverallWeights[key]) > 0);
+  if (selected.length < 2) return null;
+  const weightSet = weights.success ? weights.data : defaultOverallWeights;
+  const availableWeight = selected.reduce((total, key) => total + weightSet[key], 0);
+  const score = selected.reduce((total, key) => total + scores[key]! * weightSet[key] / availableWeight, 0);
+  return Math.round(score * 10) / 10;
 }

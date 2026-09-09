@@ -39,7 +39,7 @@ export function RubricForm({ locale }: { locale: Locale }) {
         <label className="text-xs text-[var(--text-secondary)]">Version<input className="field mt-2 font-mono" name="version" placeholder="research-v1.0" required /></label>
       </div>
       <label className="block text-xs text-[var(--text-secondary)]">{text({ en: "Description", ja: "説明", zh: "说明" })}<input className="field mt-2" name="description" /></label>
-      <label className="block text-xs text-[var(--text-secondary)]">{text({ en: "One per line: key, label, weight, maxScore", ja: "各行: key, label, weight, maxScore", zh: "每行一项：key, label, weight, maxScore" })}<textarea className="field mt-2 min-h-36 font-mono" defaultValue={"technical, Technical, 0.6, 100\nbrand, Brand, 0.4, 100"} name="dimensions" required /></label>
+      <label className="block text-xs text-[var(--text-secondary)]">{text({ en: "One per line: key, label, weight, maxScore", ja: "各行: key, label, weight, maxScore", zh: "每行一项：key, label, weight, maxScore" })}<textarea className="field mt-2 min-h-36 font-mono" defaultValue={"technical, Technical, 0.5, 100\nvisual, Visual, 0.3, 100\nbrand, Brand, 0.2, 100"} name="dimensions" required /></label>
       <Button busy={busy}>{text({ en: "Create version", ja: "Version作成", zh: "创建版本" })}</Button>
       {message && <AsyncStatus tone={tone}>{message}</AsyncStatus>}
     </form>

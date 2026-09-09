@@ -2,6 +2,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 
 const DEFAULT_USERNAME = "aurelis";
 const MINIMUM_SECRET_LENGTH = 16;
+const MINIMUM_SERVICE_TOKEN_LENGTH = 24;
 
 function secureEqual(actual: string, expected: string) {
   const actualHash = createHash("sha256").update(actual).digest();
@@ -36,6 +37,29 @@ function basicCredentials(request: Request) {
   }
 }
 
+export function validServiceToken(request: Request) {
+  const expected = process.env.AURELIS_API_TOKEN?.trim() ?? "";
+  const authorization = request.headers.get("authorization") ?? "";
+  const path = new URL(request.url).pathname;
+  return expected.length >= MINIMUM_SERVICE_TOKEN_LENGTH
+    && request.method === "POST"
+    && path === "/api/evaluations"
+    && authorization.startsWith("Bearer ")
+    && secureEqual(authorization.slice(7), expected);
+}
+
+function publicMutationAllowed(request: Request) {
+  if (["GET", "HEAD", "OPTIONS"].includes(request.method.toUpperCase())) return true;
+  const path = new URL(request.url).pathname;
+  return request.method.toUpperCase() === "POST" && [
+    "/api/brands",
+    "/api/evaluations",
+    "/api/experiments",
+    "/api/logo-evaluations",
+    "/api/rubrics",
+  ].includes(path);
+}
+
 function isApiRequest(request: Request) {
   return new URL(request.url).pathname.startsWith("/api/");
 }
@@ -63,8 +87,10 @@ function sameOriginMutation(request: Request) {
 }
 
 export function authorizeRequest(request: Request) {
+  if (validServiceToken(request)) return null;
+
   if (process.env.APP_PUBLIC_ACCESS === "true") {
-    if (!sameOriginMutation(request)) {
+    if (!sameOriginMutation(request) || !publicMutationAllowed(request)) {
       return isApiRequest(request)
         ? jsonError("ORIGIN_NOT_ALLOWED", 403)
         : new Response("Origin not allowed.", { status: 403 });

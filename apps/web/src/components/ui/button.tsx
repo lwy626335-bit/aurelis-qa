@@ -6,9 +6,9 @@ export type ButtonTone = "primary" | "secondary" | "quiet" | "danger";
 
 export function buttonStyles({ className, tone = "primary" }: { className?: string; tone?: ButtonTone } = {}) {
   return cn(
-    "interactive-control inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[var(--radius-control)] px-5 text-sm font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-45",
+    `aurelis-button aurelis-button-${tone} interactive-control inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-full px-5 text-sm font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-45`,
     tone === "primary" &&
-      "border border-[var(--accent)] bg-[var(--accent)] text-[#17140d] hover:border-[#e4cc98] hover:bg-[#e4cc98]",
+      "border border-[var(--accent)] bg-[var(--accent)] text-[#161616] hover:border-[#e5e5e5] hover:bg-[#e5e5e5]",
     tone === "secondary" &&
       "border border-[var(--border-strong)] bg-white/[0.035] text-[var(--text)] hover:border-white/25 hover:bg-white/[0.065]",
     tone === "quiet" &&

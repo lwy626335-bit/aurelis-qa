@@ -8,6 +8,7 @@ import { getDemoContent } from "@/components/dashboard/demo-content";
 import { DashboardOverviewMotion } from "@/components/dashboard/dashboard-overview-motion";
 import { QualityDimensions, QualityTrend } from "@/components/dashboard/quality-charts";
 import { ButtonLink } from "@/components/ui/button-link";
+import { SpotlightCard } from "@/components/ui/spotlight-card";
 import { localeCode, type Dictionary, type Locale } from "@/i18n/config";
 import { formatScore } from "@/lib/utils";
 
@@ -61,51 +62,53 @@ export function DashboardOverview({ dictionary, locale }: { dictionary: Dictiona
           </div>
         </header>
 
-        <aside className="mt-7 flex items-start gap-3 border-y border-[rgba(214,185,120,0.17)] bg-[rgba(214,185,120,0.035)] px-4 py-3.5 text-xs leading-5 text-[var(--text-secondary)]" data-demo-mode>
+        <aside className="mt-7 flex items-start gap-3 border-y border-[rgba(255,255,255,0.17)] bg-[rgba(255,255,255,0.035)] px-4 py-3.5 text-xs leading-5 text-[var(--text-secondary)]" data-demo-mode>
           <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-[var(--accent)]" />
           <p><strong className="font-medium text-[var(--text)]">{content.modeLabel}.</strong> {content.modeBody}</p>
         </aside>
 
         <section aria-labelledby="score-summary" className="mt-7 grid gap-5 xl:grid-cols-12">
-          <article className="panel dashboard-grid-surface relative overflow-hidden p-5 md:p-7 xl:col-span-5" data-score-summary>
-            <div className="relative">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="font-mono text-[9px] tracking-[0.14em] text-[var(--accent)] uppercase">{content.resultEyebrow}</p>
-                  <h2 id="score-summary" className="mt-3 text-lg font-medium">{copy.overall}</h2>
-                </div>
-                <span className="rounded-[6px] border border-white/[0.09] bg-white/[0.035] px-2.5 py-1 font-mono text-[10px] text-[var(--text-secondary)]">{copy.grade} {demoReport.grade}</span>
-              </div>
-              <p className="mt-4 max-w-[46ch] text-sm leading-6 text-[var(--text-secondary)]">{content.resultSummary}</p>
-
-              <div className="mt-7 flex flex-col gap-7 sm:flex-row sm:items-end sm:justify-between">
-                <ScoreGauge className="size-44 md:size-48" label={dictionary.snapshot.qualityScore} outOf={dictionary.snapshot.outOf} score={demoReport.overallScore} size="compact" />
-                <div className="min-w-0 flex-1 border-t border-white/[0.08] pt-4 sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0">
-                  <p className="font-mono text-[10px] text-[var(--text-tertiary)]">{content.formulaLabel}</p>
-                  <p className="mono-number mt-2 text-lg text-[var(--text)]">{content.formula}</p>
-                  <p className="mt-3 text-xs leading-5 text-[var(--text-tertiary)]">{content.gradeMeaning}</p>
-                </div>
-              </div>
-
-              <div className="mt-7 grid grid-cols-2 border-t border-white/[0.08]">
-                {[
-                  [copy.technical, demoReport.scores.technical],
-                  [copy.brand, demoReport.scores.brand],
-                ].map(([label, score]) => (
-                  <div className="py-5 first:border-r first:border-white/[0.08] first:pr-4 last:pl-4" key={String(label)}>
-                    <p className="text-[10px] text-[var(--text-tertiary)]">{label}</p>
-                    <p className="mono-number mt-2 text-3xl">{formatScore(Number(score), 1)}</p>
-                  </div>
-                ))}
-                <div className="col-span-2 flex items-center justify-between gap-4 border-t border-white/[0.08] py-4">
+          <article className="xl:col-span-5" data-score-summary>
+            <SpotlightCard className="panel dashboard-grid-surface h-full overflow-hidden p-5 md:p-7" spotlightColor="rgba(255, 255, 255, 0.11)">
+              <div>
+                <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-[10px] text-[var(--text-tertiary)]">{copy.reliability}</p>
-                    <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">{content.reliabilityBody}</p>
+                    <p className="font-mono text-[9px] tracking-[0.14em] text-[var(--accent)] uppercase">{content.resultEyebrow}</p>
+                    <h2 id="score-summary" className="mt-3 text-lg font-medium">{copy.overall}</h2>
                   </div>
-                  <p className="mono-number flex items-center gap-2 text-2xl"><CheckCircle aria-hidden="true" className="size-4 text-[var(--success)]" weight="fill" />{demoReport.scores.reliability}%</p>
+                  <span className="rounded-[6px] border border-white/[0.09] bg-white/[0.035] px-2.5 py-1 font-mono text-[10px] text-[var(--text-secondary)]">{copy.grade} {demoReport.grade}</span>
+                </div>
+                <p className="mt-4 max-w-[46ch] text-sm leading-6 text-[var(--text-secondary)]">{content.resultSummary}</p>
+
+                <div className="mt-7 flex flex-col gap-7 sm:flex-row sm:items-end sm:justify-between">
+                  <ScoreGauge className="size-44 md:size-48" label={dictionary.snapshot.qualityScore} outOf={dictionary.snapshot.outOf} score={demoReport.overallScore} size="compact" />
+                  <div className="min-w-0 flex-1 border-t border-white/[0.08] pt-4 sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0">
+                    <p className="font-mono text-[10px] text-[var(--text-tertiary)]">{content.formulaLabel}</p>
+                    <p className="mono-number mt-2 text-lg text-[var(--text)]">{content.formula}</p>
+                    <p className="mt-3 text-xs leading-5 text-[var(--text-tertiary)]">{content.gradeMeaning}</p>
+                  </div>
+                </div>
+
+                <div className="mt-7 grid grid-cols-2 border-t border-white/[0.08]">
+                  {[
+                    [copy.technical, demoReport.scores.technical],
+                    [copy.brand, demoReport.scores.brand],
+                  ].map(([label, score]) => (
+                    <div className="py-5 first:border-r first:border-white/[0.08] first:pr-4 last:pl-4" key={String(label)}>
+                      <p className="text-[10px] text-[var(--text-tertiary)]">{label}</p>
+                      <p className="mono-number mt-2 text-3xl">{formatScore(Number(score), 1)}</p>
+                    </div>
+                  ))}
+                  <div className="col-span-2 flex items-center justify-between gap-4 border-t border-white/[0.08] py-4">
+                    <div>
+                      <p className="text-[10px] text-[var(--text-tertiary)]">{copy.reliability}</p>
+                      <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">{content.reliabilityBody}</p>
+                    </div>
+                    <p className="mono-number flex items-center gap-2 text-2xl"><CheckCircle aria-hidden="true" className="size-4 text-[var(--success)]" weight="fill" />{demoReport.scores.reliability}%</p>
+                  </div>
                 </div>
               </div>
-            </div>
+            </SpotlightCard>
           </article>
 
           <article className="border-y border-white/[0.095] xl:col-span-7">
@@ -147,7 +150,7 @@ export function DashboardOverview({ dictionary, locale }: { dictionary: Dictiona
           </article>
         </section>
 
-        <section className="mt-5 grid border-y border-white/[0.08] sm:grid-cols-2 xl:grid-cols-4" data-demo-section id="score-method">
+        <section className="workspace-section mt-5 grid border-y border-white/[0.08] sm:grid-cols-2 xl:grid-cols-4" data-demo-section id="score-method">
           {[
             [content.auditStatus, content.notRun],
             [content.formulaLabel, "60 / 40"],

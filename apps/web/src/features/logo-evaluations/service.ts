@@ -15,7 +15,7 @@ const PROMPT_VERSION = "logo-visual-evaluator-v1.0";
 export async function createLogoEvaluation(input: LogoMetadata, bytes: Uint8Array, mediaType: string) {
   if (!process.env.OPENAI_API_KEY) throw new Error("AI_EVALUATION_UNAVAILABLE");
 
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, maxRetries: 1, timeout: 60_000 });
   const response = await client.responses.parse({
     input: [
       {
@@ -86,7 +86,7 @@ export function getLogoEvaluation(id: string) {
 }
 
 export function listLogoEvaluations() {
-  return database.logoEvaluation.findMany({ include: { project: true }, orderBy: { createdAt: "desc" } });
+  return database.logoEvaluation.findMany({ include: { project: true }, orderBy: { createdAt: "desc" }, take: 100 });
 }
 
 export async function deleteLogoEvaluation(id: string) {

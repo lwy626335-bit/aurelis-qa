@@ -153,8 +153,8 @@ export function EvaluationSelectionList({
         if (selectedRows.length > 0) {
           gsap.fromTo(
             selectedRows,
-            { backgroundColor: "rgba(214,185,120,0.13)", scale: 0.997 },
-            { backgroundColor: "rgba(214,185,120,0.045)", scale: 1, duration: 0.18, ease: "power2.out", clearProps: "backgroundColor,scale" },
+            { backgroundColor: "rgba(255,255,255,0.13)", scale: 0.997 },
+            { backgroundColor: "rgba(255,255,255,0.045)", scale: 1, duration: 0.18, ease: "power2.out", clearProps: "backgroundColor,scale" },
           );
         }
       });
@@ -254,7 +254,7 @@ export function EvaluationSelectionList({
             const isSelected = selected.has(evaluation.id);
             return (
               <div
-                className={cn("grid grid-cols-[44px_minmax(0,1fr)] transition-colors", isSelected && "bg-[rgba(214,185,120,0.045)]")}
+                className={cn("grid grid-cols-[44px_minmax(0,1fr)] transition-colors", isSelected && "bg-[rgba(255,255,255,0.045)]")}
                 data-selected={isSelected}
                 data-selection-row
                 key={evaluation.id}
@@ -298,7 +298,7 @@ export function EvaluationSelectionList({
               const isSelected = selected.has(evaluation.id);
               return (
                 <div
-                  className={cn("group grid grid-cols-[40px_minmax(0,1.5fr)_0.75fr_0.9fr_1fr_auto] items-center px-5 transition-colors", isSelected && "bg-[rgba(214,185,120,0.045)]")}
+                  className={cn("group grid grid-cols-[40px_minmax(0,1.5fr)_0.75fr_0.9fr_1fr_auto] items-center px-5 transition-colors", isSelected && "bg-[rgba(255,255,255,0.045)]")}
                   data-selected={isSelected}
                   data-selection-row
                   key={evaluation.id}

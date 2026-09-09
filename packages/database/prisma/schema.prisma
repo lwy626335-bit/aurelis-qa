@@ -99,6 +99,15 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+model RateLimitBucket {
+  key             String   @id
+  windowStartedAt DateTime
+  requestCount    Int
+  updatedAt       DateTime @updatedAt
+
+  @@index([updatedAt])
+}
+
 model Project {
   id              String           @id @default(cuid())
   ownerId         String?
@@ -123,12 +132,18 @@ model Website {
   htmlContent       String?
   cssContent        String?
   javascriptContent String?
+  fetchedHtmlContent String?
+  fetchedContentHash String?
+  fetchedAt          DateTime?
+  fetchMetadata      Json?
   language          String              @default("en")
   contentHash       String?
   project           Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
   evaluations       Evaluation[]
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
+
+  @@index([projectId, createdAt])
 }
 
 model BrandProfile {
@@ -203,6 +218,7 @@ model RubricDimension {
 
 model Evaluation {
   id                     String               @id @default(cuid())
+  requestKey             String?              @unique
   projectId              String
   websiteId              String
   brandProfileId         String?
@@ -242,6 +258,10 @@ model Evaluation {
   job                    EvaluationJob?
   createdAt              DateTime             @default(now())
   updatedAt              DateTime             @updatedAt
+
+  @@index([createdAt])
+  @@index([projectId, createdAt])
+  @@index([status, createdAt])
 }
 
 model EvaluationJob {
@@ -254,6 +274,10 @@ model EvaluationJob {
   availableAt    DateTime            @default(now())
   leaseExpiresAt DateTime?
   lockedBy       String?
+  leaseToken     String?
+  heartbeatAt    DateTime?
+  cancelRequestedAt DateTime?
+  finishedAt     DateTime?
   lastError      String?
   evaluation     Evaluation          @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
   createdAt      DateTime            @default(now())
@@ -261,6 +285,7 @@ model EvaluationJob {
 
   @@index([status, availableAt])
   @@index([leaseExpiresAt])
+  @@index([status, leaseExpiresAt, attemptCount])
 }
 
 model TechnicalResult {

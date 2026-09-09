@@ -1,5 +1,5 @@
 import { processOne, workerCapabilities } from "./index.js";
-import { startHealthServer } from "./health.js";
+import { markWorkerLoop, startHealthServer } from "./health.js";
 
 async function main() {
   console.info(JSON.stringify({ capabilities: workerCapabilities, status: "ready" }));
@@ -15,7 +15,9 @@ async function main() {
   process.once("SIGTERM", stop);
 
   while (running) {
+    markWorkerLoop();
     const processed = await processOne();
+    markWorkerLoop();
     await new Promise((resolve) => setTimeout(resolve, processed ? 250 : 2_000));
   }
 

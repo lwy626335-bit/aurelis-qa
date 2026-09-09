@@ -182,7 +182,7 @@ export function EvaluationStatusPanel({
             {stage.complete ? (
               <CheckCircle aria-hidden="true" className="size-5 text-[var(--success)]" weight="fill" />
             ) : stage.active ? (
-              <span aria-hidden="true" className="status-pulse block size-4 rounded-full border border-[var(--accent)] bg-[rgba(214,185,120,0.18)]" />
+              <span aria-hidden="true" className="status-pulse block size-4 rounded-full border border-[var(--accent)] bg-[rgba(255,255,255,0.18)]" />
             ) : snapshot.evaluationStatus === "FAILED" ? (
               <WarningCircle aria-hidden="true" className="size-5 text-[var(--warning)]" />
             ) : (

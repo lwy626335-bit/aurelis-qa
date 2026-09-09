@@ -13,6 +13,7 @@ Configure these values for Production and every Preview environment that should 
 - `APP_ACCESS_USERNAME`: the Basic Auth username; defaults to `aurelis`.
 - `APP_ACCESS_PASSWORD`: a random value of at least 16 characters. If it is absent or too short, production returns `503` instead of exposing the application.
 - `APP_PUBLIC_ACCESS`: set to `true` only when the site should be accessible without Basic Auth. Same-origin checks still protect mutation requests.
+- `AURELIS_API_TOKEN`: a random value of at least 24 characters used only by automated evaluation submissions.
 - `WORKER_HEALTH_URL`: the HTTPS origin of the persistent worker service.
 - `WORKER_HEALTH_TOKEN`: a random value of at least 16 characters, shared only with the worker.
 - `OPENAI_API_KEY` and the model variables when AI evaluation is enabled.
@@ -73,6 +74,7 @@ APP_URL=https://<web-domain>
 APP_ACCESS_USERNAME=aurelis
 APP_ACCESS_PASSWORD=<random password>
 APP_PUBLIC_ACCESS=false
+AURELIS_API_TOKEN=<random automation token>
 WORKER_HEALTH_URL=http://worker.railway.internal:8080
 WORKER_HEALTH_TOKEN=<shared random secret>
 OPENAI_API_KEY=<rotated key>

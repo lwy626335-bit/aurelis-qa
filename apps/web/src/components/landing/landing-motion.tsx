@@ -1,186 +1,103 @@
 "use client";
 
-import { useGSAP } from "@gsap/react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
-if (typeof window !== "undefined") gsap.registerPlugin(useGSAP, ScrollTrigger);
-
-export function LandingMotion({ children }: { children: React.ReactNode }) {
+export function LandingMotion({ children, className }: { children: React.ReactNode; className?: string }) {
   const root = useRef<HTMLDivElement>(null);
 
-  useGSAP(
-    () => {
-      const media = gsap.matchMedia();
+  useEffect(() => {
+    const page = root.current;
+    if (!page) return;
+    const video = page.querySelector<HTMLVideoElement>("[data-background-video]")!;
+    const pause = page.querySelector<HTMLButtonElement>("[data-video-toggle]")!;
+    const menu = page.querySelector<HTMLDetailsElement>("[data-mobile-menu]")!;
+    const trigger = menu.querySelector("summary")!;
+    const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+    const desktop = matchMedia("(min-width: 721px)");
+    const counters = Array.from(page.querySelectorAll<HTMLElement>("[data-count]"));
+    let frame = 0;
 
-      media.add(
-        {
-          motionAllowed: "(prefers-reduced-motion: no-preference)",
-          desktop: "(min-width: 1024px)",
-        },
-        (context) => {
-          const { motionAllowed, desktop } = context.conditions ?? {};
+    const showFinalCounts = () => {
+      cancelAnimationFrame(frame);
+      counters.forEach((element) => { element.textContent = Number(element.dataset.count).toFixed(1); });
+    };
+    const syncPlayback = () => {
+      pause.hidden = false;
+      pause.setAttribute("aria-pressed", String(video.paused));
+    };
+    const syncMotion = () => {
+      if (reducedMotion.matches) {
+        video.pause();
+        showFinalCounts();
+      } else {
+        void video.play().catch(() => { pause.hidden = true; });
+      }
+    };
+    const toggleVideo = () => {
+      if (video.paused) void video.play().catch(() => { pause.hidden = true; });
+      else video.pause();
+    };
+    const closeMenu = () => {
+      if (!menu.open) return;
+      const hadFocus = menu.contains(document.activeElement);
+      menu.open = false;
+      if (hadFocus && !desktop.matches) trigger.focus();
+    };
+    const syncMenu = () => trigger.setAttribute("aria-expanded", String(menu.open));
+    const onClick = (event: MouseEvent) => {
+      if ((event.target as HTMLElement).closest("a, [data-menu-dismiss]")) closeMenu();
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (!menu.open) return;
+      if (event.key === "Escape") closeMenu();
+      if (event.key === "Tab") {
+        const focusable = Array.from(menu.querySelectorAll<HTMLElement>("summary, a, button:not([tabindex='-1']):not(:disabled)"));
+        const first = focusable[0];
+        const last = focusable.at(-1);
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      }
+    };
+    const onResize = () => { if (desktop.matches) closeMenu(); };
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      observer.disconnect();
+      if (reducedMotion.matches) return;
+      const start = performance.now();
+      const count = (now: number) => {
+        counters.forEach((element, index) => {
+          const progress = Math.min(1, Math.max(0, (now - start - 480 - index * 90) / (1500 + index * 80)));
+          element.textContent = (Number(element.dataset.count) * (1 - (1 - progress) ** 3)).toFixed(1);
+        });
+        if (now - start < 2500) frame = requestAnimationFrame(count);
+      };
+      frame = requestAnimationFrame(count);
+    }, { threshold: 0.25 });
+    if (counters[0]) observer.observe(counters[0]);
+    video.addEventListener("play", syncPlayback);
+    video.addEventListener("pause", syncPlayback);
+    pause.addEventListener("click", toggleVideo);
+    reducedMotion.addEventListener("change", syncMotion);
+    desktop.addEventListener("change", onResize);
+    menu.addEventListener("toggle", syncMenu);
+    menu.addEventListener("click", onClick);
+    document.addEventListener("keydown", onKey);
+    syncMotion();
 
-          if (!motionAllowed) {
-            gsap.set("[data-hero-eyebrow], [data-hero-title] > span, [data-hero-description], [data-hero-actions], [data-hero-rule] > span, [data-hero-visual], [data-hero-layer], [data-hero-axis], [data-reveal], [data-principle], [data-principle-line], [data-method-step], [data-method-line], [data-score-panel]", { clearProps: "all" });
-            gsap.set("[data-hero-scan]", { autoAlpha: 0, clearProps: "transform" });
-            return;
-          }
+    return () => {
+      observer.disconnect();
+      showFinalCounts();
+      video.removeEventListener("play", syncPlayback);
+      video.removeEventListener("pause", syncPlayback);
+      video.pause();
+      pause.removeEventListener("click", toggleVideo);
+      reducedMotion.removeEventListener("change", syncMotion);
+      desktop.removeEventListener("change", onResize);
+      menu.removeEventListener("toggle", syncMenu);
+      menu.removeEventListener("click", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [children]);
 
-          const heroVisual = root.current?.querySelector<HTMLElement>("[data-hero-visual]");
-          const heroScan = root.current?.querySelector<HTMLElement>("[data-hero-scan]");
-          const hero = gsap.timeline({ defaults: { ease: "power3.out" } });
-
-          hero
-            .from("[data-hero-eyebrow]", { autoAlpha: 0, y: 10, duration: 0.46 }, 0.05)
-            .from("[data-hero-title] > span", { autoAlpha: 0, y: 34, duration: 0.82 }, 0.16)
-            .from("[data-hero-visual]", { autoAlpha: 0, scale: 0.985, duration: 0.7 }, 0.18)
-            .from("[data-hero-layer]", { autoAlpha: 0, y: 24, scale: 0.985, duration: 0.72, stagger: 0.18 }, 0.46)
-            .from("[data-hero-description]", { autoAlpha: 0, y: 18, duration: 0.68 }, 0.64)
-            .from("[data-hero-actions]", { autoAlpha: 0, y: 14, duration: 0.58 }, 0.82)
-            .from("[data-hero-rule] > span", { scaleX: 0, transformOrigin: "left center", duration: 0.8 }, 0.92)
-            .from("[data-hero-axis]", { autoAlpha: 0, x: -10, duration: 0.5 }, 1.12);
-
-          if (heroVisual && heroScan) {
-            hero
-              .fromTo(
-                heroScan,
-                { autoAlpha: 0, y: 0 },
-                {
-                  autoAlpha: 0.9,
-                  y: () => Math.max(heroVisual.offsetHeight - 1, 0),
-                  duration: 1.3,
-                  ease: "power2.inOut",
-                },
-                0.3,
-              )
-              .to(heroScan, { autoAlpha: 0, duration: 0.24 }, 1.54);
-          }
-
-          gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((element) => {
-            gsap.from(element, {
-              autoAlpha: 0,
-              y: 14,
-              duration: 0.56,
-              ease: "power3.out",
-              scrollTrigger: {
-                trigger: element,
-                start: "top 86%",
-                once: true,
-              },
-            });
-          });
-
-          gsap.from("[data-principle]", {
-            autoAlpha: 0,
-            x: (index) => (index % 2 === 0 ? -10 : 12),
-            duration: 0.58,
-            ease: "power3.out",
-            stagger: 0.08,
-            scrollTrigger: {
-              trigger: "[data-principles]",
-              start: "top 84%",
-              once: true,
-            },
-          });
-
-          gsap.fromTo(
-            "[data-principle-line]",
-            { scaleY: 0, transformOrigin: "top center" },
-            {
-              scaleY: 1,
-              duration: 1.1,
-              ease: "power2.out",
-              scrollTrigger: {
-                trigger: "[data-principles]",
-                start: "top 84%",
-                once: true,
-              },
-            },
-          );
-
-          gsap.from("[data-method-step]", {
-            autoAlpha: 0,
-            y: 16,
-            duration: 0.58,
-            ease: "power3.out",
-            stagger: 0.1,
-            scrollTrigger: {
-              trigger: "[data-methodology]",
-              start: "top 82%",
-              once: true,
-            },
-          });
-
-          gsap.from("[data-score-panel]", {
-            autoAlpha: 0,
-            y: 18,
-            duration: 0.64,
-            ease: "power3.out",
-            stagger: 0.14,
-            scrollTrigger: {
-              trigger: "[data-score-panel]",
-              start: "top 82%",
-              once: true,
-            },
-          });
-
-          if (desktop) {
-            const layers = gsap.utils.toArray<HTMLElement>("[data-hero-layer]");
-            const moveLayer = layers.map((layer, index) => gsap.quickTo(layer, "x", {
-              duration: 0.45 + index * 0.04,
-              ease: "power3.out",
-            }));
-            const handlePointerMove = (event: PointerEvent) => {
-              if (!heroVisual) return;
-              const bounds = heroVisual.getBoundingClientRect();
-              const offset = (event.clientX - bounds.left) / bounds.width - 0.5;
-              moveLayer.forEach((move, index) => move(offset * (4 + index * 2)));
-            };
-            const resetPointer = () => moveLayer.forEach((move) => move(0));
-
-            heroVisual?.addEventListener("pointermove", handlePointerMove);
-            heroVisual?.addEventListener("pointerleave", resetPointer);
-
-            gsap.fromTo(
-              "[data-method-line]",
-              { scaleX: 0, transformOrigin: "left center" },
-              {
-                scaleX: 1,
-                ease: "none",
-                scrollTrigger: {
-                  trigger: "[data-methodology]",
-                  start: "top 78%",
-                  end: "bottom 58%",
-                  scrub: 0.55,
-                },
-              },
-            );
-
-            gsap.to("[data-ambient]", {
-              yPercent: 8,
-              ease: "none",
-              scrollTrigger: {
-                trigger: "[data-hero]",
-                start: "top top",
-                end: "bottom top",
-                scrub: 0.7,
-              },
-            });
-
-            return () => {
-              heroVisual?.removeEventListener("pointermove", handlePointerMove);
-              heroVisual?.removeEventListener("pointerleave", resetPointer);
-            };
-          }
-        },
-      );
-
-      return () => media.revert();
-    },
-    { scope: root },
-  );
-
-  return <div ref={root}>{children}</div>;
+  return <div ref={root} className={className}>{children}</div>;
 }

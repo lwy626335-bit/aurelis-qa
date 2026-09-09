@@ -4,4 +4,9 @@ import type { z } from "zod";
 import { createRubricSchema } from "./schema";
 
 export function listRubrics() { return database.rubric.findMany({ include: { dimensions: { orderBy: { sortOrder: "asc" } } }, orderBy: { createdAt: "desc" } }); }
-export function createRubric(input: z.infer<typeof createRubricSchema>) { return database.rubric.create({ data: { description: input.description, dimensions: { create: input.dimensions.map((item, sortOrder) => ({ ...item, description: item.label, sortOrder })) }, name: input.name, version: input.version }, include: { dimensions: true } }); }
+export function createRubric(input: z.infer<typeof createRubricSchema>) {
+  return database.$transaction(async (transaction) => {
+    await transaction.rubric.updateMany({ where: { isActive: true }, data: { isActive: false } });
+    return transaction.rubric.create({ data: { description: input.description, dimensions: { create: input.dimensions.map((item, sortOrder) => ({ ...item, description: item.label, sortOrder })) }, isActive: true, name: input.name, version: input.version }, include: { dimensions: true } });
+  });
+}
