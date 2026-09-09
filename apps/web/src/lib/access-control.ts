@@ -51,13 +51,14 @@ export function validServiceToken(request: Request) {
 function publicMutationAllowed(request: Request) {
   if (["GET", "HEAD", "OPTIONS"].includes(request.method.toUpperCase())) return true;
   const path = new URL(request.url).pathname;
-  return request.method.toUpperCase() === "POST" && [
+  // Page POSTs serve the locale action; API mutations use the explicit allowlist.
+  return request.method.toUpperCase() === "POST" && (!path.startsWith("/api/") || [
     "/api/brands",
     "/api/evaluations",
     "/api/experiments",
     "/api/logo-evaluations",
     "/api/rubrics",
-  ].includes(path);
+  ].includes(path));
 }
 
 function isApiRequest(request: Request) {

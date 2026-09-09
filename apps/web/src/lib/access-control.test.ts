@@ -13,6 +13,12 @@ function authorization(username = "aurelis", password = "a-long-access-password"
 afterEach(() => vi.unstubAllEnvs());
 
 describe("authorizeRequest", () => {
+  it("allows same-origin locale actions in public mode", () => {
+    vi.stubEnv("APP_PUBLIC_ACCESS", "true");
+    expect(authorizeRequest(request("/dashboard/logo", {
+      method: "POST", headers: { origin: "https://aurelis.example" },
+    }))).toBeNull();
+  });
   it("keeps local development open when no password is configured", () => {
     vi.stubEnv("NODE_ENV", "development");
     expect(authorizeRequest(request())).toBeNull();

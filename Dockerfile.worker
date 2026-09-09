@@ -29,4 +29,4 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||8080)+'/health',{headers:{authorization:'Bearer '+(process.env.WORKER_HEALTH_TOKEN||'')}}).then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
 
-CMD ["node", "apps/worker/node_modules/tsx/dist/cli.mjs", "apps/worker/src/runner.ts"]
+CMD ["sh", "-c", "cd /app/packages/database && node node_modules/prisma/build/index.js migrate deploy && cd /app && exec node apps/worker/node_modules/tsx/dist/cli.mjs apps/worker/src/runner.ts"]
